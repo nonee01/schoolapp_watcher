@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "schoolapp-watcher"
+version = "0.1.0"
+description = "Watch ENSAM SchoolApp marks table and notify on changes."
+requires-python = ">=3.10"
+dependencies = [
+  "requests==2.32.5",
+  "beautifulsoup4==4.12.3",
+  "lxml==5.3.0",
+  "rich==13.9.4",
+]
+
+[project.scripts]
+schoolapp-watch = "schoolapp_watch:main"
+schoolapp = "schoolapp_watch:main"
+
+[tool.setuptools]
+py-modules = ["schoolapp_watch"]

@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Local env/secrets
+.env
+
+# Local state/snapshots/logs
+.local/
+snapshot.json
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
