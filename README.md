@@ -1,96 +1,174 @@
-# SchoolApp Watcher
+# SchoolApp CLI
 
-CLI tool that logs into ENSAM SchoolApp, fetches the marks table, and alerts you when it changes.
+Production-oriented CLI for ENSAM SchoolApp with semester namespaces:
 
-## Setup
+- `schoolapp s3 ...`
+- `schoolapp s4 ...`
+
+## Features
+
+- Semester-first commands (`s3`, `s4`)
+- Watch mode with snapshot diffing
+- Interactive weighted calculator
+- Module listing per semester
+- Optional SMTP notifications
+- Rich output (tables, panels, color logs)
+
+## Installation
+
+### Local editable install (recommended)
 
 ```bash
-cd schoolapp
+cd /home/notadil/Projects/schoolapp_watcher
 python3 -m venv .venv
-. .venv/bin/activate
+source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-Optional: install as a CLI command (recommended):
-
-```bash
-cd schoolapp
-. .venv/bin/activate
 pip install -e .
-schoolapp-watch --help
 ```
 
-## Run once
+### User install
 
 ```bash
-python schoolapp_watch.py --email "you@example.com"
+python3 -m pip install --user -e .
 ```
 
-Or load credentials from a file:
+If `schoolapp` is not found, ensure your user bin path is in `PATH`.
+
+## CLI Layout
+
+```text
+schoolapp s3 list
+schoolapp s3 calc
+schoolapp s3 watch
+
+schoolapp s4 list
+schoolapp s4 calc
+schoolapp s4 watch
+```
+
+## Common Commands
 
 ```bash
-python schoolapp_watch.py --env-file .env.example
+schoolapp --help
+schoolapp --version
+schoolapp s3 --help
+schoolapp s4 --help
 ```
 
-Recommended (keeps secrets out of git):
+### List modules
 
 ```bash
-cp .env.example .env
-# edit .env and set SCHOOLAPP_EMAIL / SCHOOLAPP_PASSWORD
-schoolapp
+schoolapp s3 list
+schoolapp s4 list
 ```
 
-## Watch mode (polling)
+### Calculator
+
+Interactive:
 
 ```bash
-python schoolapp_watch.py --email "you@example.com" --watch --interval 900
+schoolapp s3 calc
+schoolapp s4 calc
 ```
 
-## Calculator
-
-Interactive calculator using your S3 (2A) coefficients:
+From JSON marks file:
 
 ```bash
-python schoolapp_watch.py --calc
+schoolapp s4 calc --marks-file marks.json
 ```
 
-Or provide marks via JSON:
+Example `marks.json`:
 
 ```json
 {
-	"API311.cc": 12,
-	"API311.ex": 14,
-	"API321.cc": 10,
-	"API321.ex": 13
+  "API411.cc": 12,
+  "API411.ex": 14,
+  "API421.cc": 10,
+  "API421.ex": 13
 }
 ```
 
-Run it:
+### Watch mode
+
+Single run:
 
 ```bash
-python schoolapp_watch.py --calc --marks-file marks.json
+schoolapp s4 watch --once --email "you@example.com" --password "secret"
 ```
 
-## Email notifications
-
-Set these env vars (recommended):
-
-- `SCHOOLAPP_EMAIL` / `SCHOOLAPP_PASSWORD`
-- `SMTP_HOST` (e.g. `smtp.gmail.com`)
-- `SMTP_PORT` (e.g. `587`)
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
-- `SMTP_FROM` (e.g. `you@gmail.com`)
-- `SMTP_TO` (destination email)
-
-Then:
+Continuous polling:
 
 ```bash
-python schoolapp_watch.py --watch --interval 900 --notify-email
+schoolapp s3 watch --interval 900 --email "you@example.com" --password "secret"
 ```
 
-Tip: prefer env vars for passwords (avoid passing `--password` on the command line).
+With email notification:
 
-Notes:
-- “Instant” means: the moment a change is detected on the next poll.
-- If your mail provider requires an app password (Gmail), use that.
+```bash
+schoolapp s3 watch --interval 900 --notify-email --email "you@example.com" --password "secret"
+```
+
+## Config and Environment
+
+Global options:
+
+- `--debug`
+- `--version`
+- `--config PATH`
+- `--env-file PATH`
+
+Optional config file: `~/.schoolapp/config.toml`
+
+```toml
+[schoolapp]
+email = "you@example.com"
+password = "secret"
+
+[smtp]
+host = "smtp.gmail.com"
+port = 587
+username = "you@gmail.com"
+password = "app-password"
+from = "you@gmail.com"
+to = "you@gmail.com"
+```
+
+Supported env vars:
+
+- `SCHOOLAPP_EMAIL`, `SCHOOLAPP_PASSWORD`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TO`
+
+## Common Errors
+
+### Wrong Python interpreter
+
+Symptoms: `ModuleNotFoundError` (e.g. `requests`)
+
+Fix:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+schoolapp s4 list
+```
+
+### Missing virtualenv activation
+
+Run commands via venv interpreter directly:
+
+```bash
+/home/notadil/Projects/schoolapp_watcher/.venv/bin/schoolapp s3 list
+```
+
+### SMTP issues
+
+- Check SMTP host/port/credentials
+- Use app passwords where required (e.g. Gmail)
+- Test once with `--once` before running long watch mode
+
+## Exit Codes
+
+- `0`: success / no change in watch-once
+- `1`: change detected in watch-once
+- `2`: runtime error (validation/network/login/etc)

@@ -14,4 +14,4 @@ snapshot.json
 
 # OS/editor
 .DS_Store
-.vscode/
+.vscode/.env
