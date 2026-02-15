@@ -400,6 +400,187 @@ def _element_title_map() -> dict[str, str]:
     return out
 
 
+# Preset based on the user's pasted S4 (2A) coefficients.
+PRESET_2A_S4: list[ModuleDef] = [
+    ModuleDef(
+        code="API41",
+        title="Analyse 4",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=5.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API411",
+                title="Analyse 4",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=5.0,
+                coef_tp=0.0,
+                coef_eelem=5.0,
+            )
+        ],
+    ),
+    ModuleDef(
+        code="API42",
+        title="Algèbre 2",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=5.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API421",
+                title="Algèbre 2",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=5.0,
+                coef_tp=0.0,
+                coef_eelem=5.0,
+            )
+        ],
+    ),
+    ModuleDef(
+        code="API43",
+        title="Eléments de machine",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=5.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API431",
+                title="Eléments de machine",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=5.0,
+                coef_tp=0.0,
+                coef_eelem=5.0,
+            )
+        ],
+    ),
+    ModuleDef(
+        code="API44",
+        title="Electromagnétisme et Optique",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=5.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API441",
+                title="Electromagnétisme",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=2.75,
+                coef_tp=0.25,
+                coef_eelem=3.0,
+            ),
+            ElementDef(
+                code="API442",
+                title="Optique physique",
+                coef_cc=0.0,
+                coef_ex=1.0,
+                coef_ecrit=1.75,
+                coef_tp=0.25,
+                coef_eelem=2.0,
+            ),
+        ],
+    ),
+    ModuleDef(
+        code="API45",
+        title="Programmation avancée et méthodes numériques",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=4.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API451",
+                title="Méthodes numériques",
+                coef_cc=0.0,
+                coef_ex=1.0,
+                coef_ecrit=1.0,
+                coef_tp=0.75,
+                coef_eelem=1.75,
+            ),
+            ElementDef(
+                code="API452",
+                title="Programmation Avancée",
+                coef_cc=0.0,
+                coef_ex=1.0,
+                coef_ecrit=1.75,
+                coef_tp=0.0,
+                coef_eelem=1.75,
+            ),
+        ],
+    ),
+    ModuleDef(
+        code="API46",
+        title="Langues 4",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=3.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API461",
+                title="Techniques d'écriture",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=1.5,
+                coef_tp=0.0,
+                coef_eelem=1.5,
+            ),
+            ElementDef(
+                code="API462",
+                title="English for International Communication",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=1.5,
+                coef_tp=0.0,
+                coef_eelem=1.5,
+            ),
+        ],
+    ),
+    ModuleDef(
+        code="API47",
+        title="Savoir être, Développement personnel",
+        niveau="2A",
+        semestre="S4",
+        coef_mod=3.0,
+        seuil=11.0,
+        eliminatoire=7.0,
+        elements=[
+            ElementDef(
+                code="API471",
+                title="Développement personnel",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=1.5,
+                coef_tp=0.0,
+                coef_eelem=1.5,
+            ),
+            ElementDef(
+                code="API472",
+                title="Savoir être",
+                coef_cc=0.3,
+                coef_ex=0.7,
+                coef_ecrit=1.5,
+                coef_tp=0.0,
+                coef_eelem=1.5,
+            ),
+        ],
+    ),
+]
+
+
 def _prompt_float(label: str, default: float | None = None) -> float:
     con = _console()
     if Prompt is not None and con is not None:
@@ -452,11 +633,7 @@ def _calc_element_grade(defn: ElementDef, marks: dict[str, float]) -> float:
 
 def run_calculator(*, preset: str, marks_file: str | None) -> int:
     con = _console()
-
-    presets: dict[str, list[ModuleDef]] = {
-        "2A-S3": PRESET_2A_S3,
-        "S3": PRESET_2A_S3,
-    }
+    presets = get_presets()
 
     modules = presets.get(preset.upper()) if preset.upper() in presets else presets.get(preset)
     if modules is None:
@@ -522,6 +699,40 @@ def run_calculator(*, preset: str, marks_file: str | None) -> int:
     return 0
 
 
+def get_presets() -> dict[str, list[ModuleDef]]:
+    return {
+        "2A-S3": PRESET_2A_S3,
+        "S3": PRESET_2A_S3,
+        "2A-S4": PRESET_2A_S4,
+        "S4": PRESET_2A_S4,
+    }
+
+
+def run_list_modules(*, preset: str) -> int:
+    con = _console()
+    presets = get_presets()
+    modules = presets.get(preset.upper()) if preset.upper() in presets else presets.get(preset)
+    if modules is None:
+        raise RuntimeError(f"Unknown preset '{preset}'. Available: {', '.join(sorted(presets.keys()))}")
+
+    if con is not None:
+        con.print(Panel.fit(f"Modules — {preset}"))
+        for mod in modules:
+            con.print(f"[bold]{mod.code}[/bold] — {mod.title} (Coef {mod.coef_mod})")
+            for el in mod.elements:
+                con.print(f"  - [dim]{el.code}[/dim] {el.title} (coef elem {el.coef_eelem})")
+            con.print()
+    else:
+        print(f"Modules — {preset}")
+        for mod in modules:
+            print(f"{mod.code} — {mod.title} (Coef {mod.coef_mod})")
+            for el in mod.elements:
+                print(f"  - {el.code} {el.title} (coef elem {el.coef_eelem})")
+            print()
+
+    return 0
+
+
 def _default_state_dir() -> Path:
     xdg = os.environ.get("XDG_STATE_HOME")
     if xdg:
@@ -534,7 +745,7 @@ def _normalize_cell(text: str) -> str:
 
 
 def _extract_csrf(html: str) -> str | None:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     token = soup.select_one('input[name="_csrf"]')
     if not token:
         return None
@@ -543,7 +754,7 @@ def _extract_csrf(html: str) -> str | None:
 
 
 def _extract_table(html: str) -> tuple[list[str], list[list[str]]]:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
 
     tables = soup.find_all("table")
     if not tables:
@@ -596,7 +807,7 @@ def _fingerprint(headers: list[str], rows: list[list[str]]) -> str:
 
 
 def _looks_like_login_page(html: str) -> bool:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     return bool(soup.select_one('form[action="/login"]') and soup.select_one('input[name="password"]'))
 
 
@@ -966,6 +1177,7 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="JSON file with marks (e.g. {'API311.cc': 12, 'API311.ex': 14})",
     )
+    calc_group.add_argument("--list-modules", action="store_true", help="List modules/elements for the selected preset and exit")
 
     debug_group = parser.add_argument_group("Debug")
     debug_group.add_argument("--verbose", action="store_true", help="Enable more detailed logs")
@@ -979,6 +1191,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.calc:
         try:
+            if args.list_modules:
+                return run_list_modules(preset=str(args.preset))
             return run_calculator(preset=str(args.preset), marks_file=args.marks_file)
         except Exception as exc:
             logger.exception("Calculator failed")

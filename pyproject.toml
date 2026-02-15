@@ -4,19 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "schoolapp-watcher"
-version = "0.1.0"
-description = "Watch ENSAM SchoolApp marks table and notify on changes."
+version = "0.2.0"
+description = "Semester-based ENSAM SchoolApp CLI with watch, calculator, and notifications."
 requires-python = ">=3.10"
 dependencies = [
   "requests==2.32.5",
   "beautifulsoup4==4.12.3",
-  "lxml==5.3.0",
   "rich==13.9.4",
+  "typer==0.16.0",
+  "tomli==2.2.1",
 ]
 
 [project.scripts]
-schoolapp-watch = "schoolapp_watch:main"
-schoolapp = "schoolapp_watch:main"
+schoolapp = "schoolapp.cli:app"
+schoolapp-watch = "schoolapp.cli:app"
 
 [tool.setuptools]
 py-modules = ["schoolapp_watch"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["schoolapp*"]
