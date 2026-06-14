@@ -6,7 +6,7 @@
 
 **Architecture:** Native Kotlin + Jetpack Compose (Material 3), MVVM, Hilt DI. Pure-logic classes (scraper parsing, fingerprint, calculator, diff, Telegram) are kept free of Android dependencies so they run as fast JVM unit tests. OkHttp (with a persistent in-memory CookieJar) replaces `requests.Session`; Jsoup replaces BeautifulSoup; `java.security.MessageDigest` replaces `hashlib`. Background service, full multi-screen UI, Room persistence, and MIUI survival come in Plans 2 and 3.
 
-**Tech Stack:** Kotlin 2.0.21, AGP 8.7.3, Gradle 8.11.1, JDK 17, compileSdk 35 / minSdk 26 / targetSdk 34, Jetpack Compose (BOM 2024.12.01), Hilt 2.52 (KSP 2.0.21-1.0.28), OkHttp 4.12.0, Jsoup 1.18.3, androidx.security-crypto 1.1.0-alpha06, JUnit4 + OkHttp MockWebServer for tests.
+**Tech Stack:** Kotlin 2.0.21, AGP 8.7.3, Gradle 8.11.1, JDK 17, compileSdk 35 / minSdk 26 / targetSdk 34, Jetpack Compose (BOM 2024.12.01), Hilt 2.52 (KSP 2.0.21-1.0.28), OkHttp 4.12.0, Jsoup 1.18.3, androidx.security-crypto 1.0.0, JUnit4 + OkHttp MockWebServer for tests.
 
 **Target device (verified on adb):** Redmi 2209116AG (`sweet`), HyperOS 1.0, Android 13 / API 33, arm64-v8a.
 
@@ -159,7 +159,7 @@ composeBom = "2024.12.01"
 coroutines = "1.9.0"
 okhttp = "4.12.0"
 jsoup = "1.18.3"
-securityCrypto = "1.1.0-alpha06"
+securityCrypto = "1.0.0"
 junit = "4.13.2"
 
 [libraries]
