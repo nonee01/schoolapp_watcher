@@ -18,7 +18,7 @@
 - **App package / namespace:** `ma.ensam.schoolapp`
 - **Run all gradle commands from** `/home/notadil/Projects/schoolapp_watcher/android/`
 - **Run JVM unit tests with:** `./gradlew testDebugUnitTest`
-- **Device is connected** (`adb devices` shows `3ad2f4880013`). Install with `./gradlew installDebug`.
+- **Device is connected** (`adb devices` shows `3ad2f4880013`). Install with `./gradlew installDebug`. **MIUI/HyperOS note:** `installDebug` may fail with `INSTALL_FAILED_USER_RESTRICTED` (a MIUI install guard). If so, build with `./gradlew assembleDebug` then install the APK directly: `adb install -r app/build/outputs/apk/debug/app-debug.apk` (verified working on this device).
 
 ## File Structure (Plan 1 scope)
 
@@ -2147,6 +2147,7 @@ Expected: `BUILD SUCCESSFUL`, all tests green.
 
 Run: `./gradlew installDebug`
 Expected: `BUILD SUCCESSFUL`, `Installed on 1 device`.
+If it fails with `INSTALL_FAILED_USER_RESTRICTED` (MIUI guard), instead run `./gradlew assembleDebug` then `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
 - [ ] **Step 3: Launch and stream logs**
 
