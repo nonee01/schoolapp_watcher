@@ -66,4 +66,27 @@ class SchoolAppClient(
             fingerprint = Fingerprint.of(headers, rows, semester),
         )
     }
+
+    private val absenceUrl get() = "$baseUrl/student/absence/bilan"
+    private val sanctionsUrl get() = "$baseUrl/student/absence/sanctions"
+    private val modulesUrl get() = "$baseUrl/student/notesmod-encours"
+    private val semestersUrl get() = "$baseUrl/student/notessem"
+
+    /**
+     * Fetch the four extra pages. Assumes the session is already authenticated
+     * (call checkOnce first in the same client). A page that fails or looks like
+     * the login page yields an empty section (caller carries old state forward).
+     */
+    fun fetchExtras(): ma.ensam.schoolapp.domain.model.Extras {
+        fun safe(url: String): String? = try {
+            val html = get(url)
+            if (SchoolAppParsing.looksLikeLoginPage(html)) null else html
+        } catch (e: Exception) { null }
+
+        val abs = safe(absenceUrl)?.let { SchoolAppExtrasParsing.parseAbsenceLog(it) } ?: emptyMap()
+        val san = safe(sanctionsUrl)?.let { SchoolAppExtrasParsing.parseSanctions(it) } ?: emptyMap()
+        val mods = safe(modulesUrl)?.let { SchoolAppExtrasParsing.parseModulesEncours(it) } ?: emptyMap()
+        val sems = safe(semestersUrl)?.let { SchoolAppExtrasParsing.parseSemesterResults(it) } ?: emptyMap()
+        return ma.ensam.schoolapp.domain.model.Extras(abs, san, mods, sems)
+    }
 }
