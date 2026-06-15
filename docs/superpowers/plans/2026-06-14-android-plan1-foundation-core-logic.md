@@ -704,6 +704,8 @@ git commit -m "feat(android): S3/S4 presets translated from presets.py (tested)"
 
 ### Task 7: Grade calculator
 
+> **Applied during execution (review follow-up, commit f60b86b):** `toFloat` was renamed to `parseMarkString`; `ModuleResult.status` is a `ModuleStatus` enum (VORD/RAT/NV) instead of a `String`; the `"--"` sentinel is the named constant `MISSING_MARK`; the two semester test expectations below were corrected (all-10s → 9.5833 with all 7 NV; all-12s → 11.5 with 6 VORD / 1 NV, because API45's element weights sum to 2.75 ≠ its coefMod 4.0); and a `semester_module_validates_via_rattrapage` test was added (8 tests total). The code blocks below show the pre-review version; the committed code is authoritative.
+
 **Files:**
 - Create: `android/app/src/main/java/ma/ensam/schoolapp/domain/Calculator.kt`
 - Test: `android/app/src/test/java/ma/ensam/schoolapp/CalculatorTest.kt`
@@ -1926,7 +1928,7 @@ class MainViewModel @Inject constructor(
         fun get(row: List<String>, key: String): Double? {
             val i = idx[key] ?: return null
             if (i >= row.size) return null
-            return Calculator.toFloat(row[i])
+            return Calculator.parseMarkString(row[i])
         }
         for (row in snap.rows) {
             if (codeIdx >= row.size) continue
