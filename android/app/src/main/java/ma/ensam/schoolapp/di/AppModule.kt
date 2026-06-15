@@ -23,4 +23,12 @@ object AppModule {
 
     @Provides @Singleton
     fun provideTelegramNotifier(): TelegramNotifier = TelegramNotifier()
+
+    @Provides @Singleton
+    fun provideDatabase(@ApplicationContext ctx: Context): ma.ensam.schoolapp.data.db.AppDatabase =
+        ma.ensam.schoolapp.data.db.AppDatabase.get(ctx)
+
+    @Provides @Singleton
+    fun provideWatcherDao(db: ma.ensam.schoolapp.data.db.AppDatabase): ma.ensam.schoolapp.data.db.WatcherDao =
+        db.watcherDao()
 }
