@@ -66,6 +66,10 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.jsoup)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
