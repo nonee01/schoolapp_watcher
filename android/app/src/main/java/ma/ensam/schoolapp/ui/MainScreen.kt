@@ -16,11 +16,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun MainScreen(vm: MainViewModel = hiltViewModel()) {
     val state by vm.state.collectAsState()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -59,6 +63,15 @@ fun MainScreen(vm: MainViewModel = hiltViewModel()) {
             }
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Background watcher", style = MaterialTheme.typography.titleMedium)
+            Switch(checked = state.watcherOn, onCheckedChange = { vm.setWatcher(it, context) })
+        }
+
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = vm::checkNow, enabled = !state.loading) { Text("Check Now") }
             OutlinedButton(onClick = vm::computeFromSnapshot, enabled = state.snapshot != null) {
@@ -68,6 +81,21 @@ fun MainScreen(vm: MainViewModel = hiltViewModel()) {
 
         if (state.loading) CircularProgressIndicator()
         state.error?.let { Text("Error: $it", color = MaterialTheme.colorScheme.error) }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Telegram notifications", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = state.telegramToken, onValueChange = vm::onTelegramToken,
+                    label = { Text("Bot token") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = state.telegramChatId, onValueChange = vm::onTelegramChatId,
+                    label = { Text("Chat ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                )
+                Button(onClick = vm::saveTelegram) { Text("Save Telegram") }
+            }
+        }
 
         state.snapshot?.let { snap ->
             Card(modifier = Modifier.fillMaxWidth()) {
