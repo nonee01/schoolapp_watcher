@@ -3,13 +3,15 @@ package ma.ensam.schoolapp.domain
 import ma.ensam.schoolapp.domain.model.ElementDef
 import ma.ensam.schoolapp.domain.model.ModuleDef
 
+enum class ModuleStatus { VORD, RAT, NV }
+
 data class ModuleResult(
     val code: String,
     val title: String,
     val averageOrdinaire: Double,
     val averageRattrapage: Double,
     val averageFinal: Double,
-    val status: String, // VORD | RAT | NV
+    val status: ModuleStatus,
 )
 
 data class SemesterResult(
@@ -21,9 +23,15 @@ data class SemesterResult(
 
 object Calculator {
 
-    fun toFloat(value: String): Double? {
+    private const val MISSING_MARK = "--"
+
+    /**
+     * Parses a scraped mark string to a Double, or null if blank / "--" / non-numeric.
+     * Parsing helper used by upstream layers (e.g. the snapshot -> marks mapping).
+     */
+    fun parseMarkString(value: String): Double? {
         val raw = value.trim()
-        if (raw.isEmpty() || raw == "--") return null
+        if (raw.isEmpty() || raw == MISSING_MARK) return null
         return raw.toDoubleOrNull()
     }
 
@@ -80,11 +88,11 @@ object Calculator {
             semPointsFinal += avgFinal * mod.coefMod
 
             val status = when {
-                avgOrd >= mod.seuil -> "VORD"
-                avgRatt >= mod.seuil -> "RAT"
-                else -> "NV"
+                avgOrd >= mod.seuil -> ModuleStatus.VORD
+                avgRatt >= mod.seuil -> ModuleStatus.RAT
+                else -> ModuleStatus.NV
             }
-            if (status == "NV") nonValidated.add(mod.code)
+            if (status == ModuleStatus.NV) nonValidated.add(mod.code)
             results.add(ModuleResult(mod.code, mod.title, avgOrd, avgRatt, avgFinal, status))
         }
 
