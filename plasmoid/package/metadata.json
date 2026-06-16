@@ -1,0 +1,16 @@
+{
+    "KPlugin": {
+        "Id": "com.notadil.schoolappwatcher",
+        "Name": "SchoolApp Watcher",
+        "Description": "Watcher status, recent grade changes, and notifications from the SchoolApp watcher API",
+        "Icon": "view-calendar-tasks",
+        "Authors": [
+            { "Name": "notadil" }
+        ],
+        "Category": "System Information",
+        "License": "MIT",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
