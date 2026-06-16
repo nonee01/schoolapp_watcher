@@ -80,4 +80,10 @@ object Presets {
                 "Unsupported semester '$semester'. Expected S3 or S4."
             )
         }
+
+    /** Human title for a module code across known presets, or null if unknown. */
+    fun moduleTitle(code: String): String? {
+        val c = code.trim().uppercase()
+        return (PRESET_2A_S3 + PRESET_2A_S4).firstOrNull { it.code.uppercase() == c }?.title
+    }
 }
