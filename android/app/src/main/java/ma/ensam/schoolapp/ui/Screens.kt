@@ -33,10 +33,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import ma.ensam.schoolapp.domain.ModuleStatus
-import ma.ensam.schoolapp.domain.Presets
-import ma.ensam.schoolapp.domain.model.ModuleDef
-import ma.ensam.schoolapp.domain.model.Snapshot
 import ma.ensam.schoolapp.ui.components.GreenBg
 import ma.ensam.schoolapp.ui.components.Green
 import ma.ensam.schoolapp.ui.components.ModuleCard
