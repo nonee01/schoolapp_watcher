@@ -21,6 +21,7 @@ CACHE_DIR = os.path.join(
     "schoolapp-widget")
 SEEN_FILE = os.path.join(CACHE_DIR, "last_seen.json")
 
+# Keep TYPE_ICON / TYPE_TITLE in sync with typeIcon / titleForType in ui/main.qml.
 TYPE_ICON = {"grades": "📊", "absences": "🚫", "modules": "📋", "semesters": "🎓"}
 TYPE_TITLE = {
     "grades": "SchoolApp - grades",
