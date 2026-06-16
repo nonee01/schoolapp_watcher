@@ -51,18 +51,32 @@ Output (stdout, always valid JSON):
   "next_check_s": 102,
   "poll_interval": 120,
   "last_check": "2026-06-16T14:31:08",
-  "last_change": "2026-06-14T03:12:00",
-  "latest_change_summary": "API451 CC  — → 14.5",
-  "latest_change_label": "API451 · CC updated",
-  "latest_change_module": "Analyse & Probabilités",
+  "last_change": "2026-06-15T23:40:24",
+  "latest_change_type": "grades",
+  "latest_change_summary": "Notes mises à jour — S4",
   "history": [
-    { "ts": "...", "summary": "API451 CC  — → 14.5", "label": "API451 · CC updated", "module": "Analyse & Probabilités" }
+    { "ts": "2026-06-15T23:40:24", "type": "grades", "summary": "Notes mises à jour — S4", "new": true },
+    { "ts": "2026-06-15T16:41:31", "type": "modules", "summary": "Résultat module: Algèbre 2 — RAT (9.08)", "new": false }
   ],
   "new_change": false,
+  "new_summaries": [],
   "error": "",
   "updated": "14:32"
 }
 ```
+
+`new_change` is the boolean edge trigger (true when at least one entry is newer than `last_seen.ts`). `new_summaries` is the ordered list of `summary` strings for those new entries (newest first), so QML builds the notification body directly. Each `history` item carries a `new` flag so the Changes tab can badge it without re-deriving `last_seen`. The script writes `last_seen.ts` **after** computing these, so the next poll sees them as seen.
+
+**History entry shape (ground truth).** The watcher appends to `~/.local/state/schoolapp/changes.jsonl` and `/api/history` returns those lines reversed (newest first). Each entry has exactly these fields:
+
+| Field | Example | Notes |
+|-------|---------|-------|
+| `ts` | `"2026-06-15T23:40:24"` | ISO timestamp, `timespec="seconds"` |
+| `type` | `"grades"` | one of `grades`, `absences`, `modules`, `semesters` |
+| `semester` | `"S4"` | semester code |
+| `summary` | `"Notes mises à jour — S4"` | ready-made human string (French); grades summaries are generic, module/semester summaries carry detail like `"Résultat module: Algèbre 2 — RAT (9.08)"` |
+
+The widget never parses element-level detail out of the history — it surfaces `summary` verbatim. Per-element current values come from `/api/grades/S4` (Grades tab only).
 
 On any failure: `ok: false`, `error: "..."`, history/watcher fields are empty/null. Widget shows last known data grayed out.
 
@@ -81,13 +95,13 @@ On any failure: `ok: false`, `error: "..."`, history/watcher fields are empty/nu
 
 | State | Appearance |
 |-------|-----------|
-| Has any history | green dot + grade pill showing most recent change (`API451 ↑14.5`) |
+| Has any history | green dot + type chip + truncated latest `summary` (e.g. `📊 Notes mises à jour — S4`) |
 | No history yet | green dot + `No changes` (muted) |
 | Service stopped | red dot + `stopped` |
 | Manually paused | amber dot + `paused` |
 | API error | amber dot + `error` |
 
-The compact view always shows the most recent entry from `/api/history` (if any). There is no time-based reset — the pill simply reflects the latest known change at all times.
+The compact view always shows the most recent entry from `/api/history` (if any). There is no time-based reset — the pill simply reflects the latest known change at all times. An icon keyed off `type` (📊 grades · 🚫 absences · 📋 modules · 🎓 semesters) precedes the summary; the summary is elided with `…` past ~28 chars so the panel stays narrow.
 
 ### Full popup — 3 tabs
 
@@ -99,8 +113,8 @@ The compact view always shows the most recent entry from `/api/history` (if any)
 
 **Changes tab**
 - List of recent changes (last 10 from `/api/history`)
-- Each item: module name, element code, field (CC/EX/TP), old → new value, timestamp
-- "NEW" badge on entries detected since last seen
+- Each item: type chip (grades/absences/modules/semesters), the `summary` string, and a relative timestamp (e.g. "2h ago")
+- "NEW" badge on entries with `ts` newer than `last_seen.ts`
 
 **Grades tab**
 - Current S4 snapshot from `/api/grades/S4`
@@ -113,10 +127,10 @@ The compact view always shows the most recent entry from `/api/history` (if any)
 
 ### Desktop notification
 
-- **Title:** `"API451 · CC updated"` (first changed element)
-- **Body:** `"— → 14.5 · Analyse & Probabilités · Jun 14 03:12"`
-- If multiple changes in one batch: body lists all, newline-separated (max 3, then "+ N more")
-- Fires only on upward edge (`new_change: true`) — not on every poll
+- **Title:** keyed off the newest entry's `type` — `"SchoolApp — grades"`, `"SchoolApp — absences"`, `"SchoolApp — modules"`, `"SchoolApp — semesters"`
+- **Body:** the entry's `summary` verbatim (e.g. `"Notes mises à jour — S4"` or `"Résultat module: Algèbre 2 — RAT (9.08)"`)
+- If more than one new entry since `last_seen`, body lists each summary newline-separated (max 3, then `"+ N more"`)
+- Fires only on the upward edge (`new_change: true`) — not on every poll
 - Uses `org.kde.notification` `Notification` component (same as claude-usage-plasmoid)
 - `componentName: "plasma_workspace"`, `eventId: "notification"`
 
