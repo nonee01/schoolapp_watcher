@@ -34,7 +34,8 @@ TYPE_TITLE = {
 
 def relative_time(ts_iso, now=None):
     """'just now' / 'Nm ago' / 'Nh ago' / 'Nd ago'. '' on bad input."""
-    now = now or datetime.now()
+    if now is None:
+        now = datetime.now()
     try:
         t = datetime.fromisoformat(ts_iso)
     except (ValueError, TypeError):
@@ -56,7 +57,8 @@ def relative_time(ts_iso, now=None):
 
 def next_check_seconds(status, now=None):
     """Seconds until status['next_check'] (ISO). 0 if missing/past/bad."""
-    now = now or datetime.now()
+    if now is None:
+        now = datetime.now()
     nc = status.get("next_check")
     if not nc:
         return 0
