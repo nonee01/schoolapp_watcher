@@ -37,7 +37,6 @@ import ma.ensam.schoolapp.domain.ModuleStatus
 import ma.ensam.schoolapp.domain.Presets
 import ma.ensam.schoolapp.domain.model.ModuleDef
 import ma.ensam.schoolapp.domain.model.Snapshot
-import ma.ensam.schoolapp.ui.components.ElementRow
 import ma.ensam.schoolapp.ui.components.GreenBg
 import ma.ensam.schoolapp.ui.components.Green
 import ma.ensam.schoolapp.ui.components.ModuleCard
@@ -58,27 +57,6 @@ private fun fmtDur(seconds: Long): String = when {
 }
 private fun emojiFor(type: String): String = when (type) {
     "grades" -> "📚"; "absences" -> "🚨"; "modules" -> "📋"; "semesters" -> "🎓"; else -> "•"
-}
-
-/** Resolve display rows for a module's elements from a scraped snapshot. */
-private fun elementRowsFor(snap: Snapshot?, module: ModuleDef): List<ElementRow> {
-    if (snap == null) return module.elements.map { ElementRow(it.code, it.title, "--", "--", "--", "--", "--") }
-    val idx = snap.headers.withIndex().associate { (i, h) -> h to i }
-    val ci = idx["CodeElem"] ?: -1
-    val byCode = if (ci >= 0)
-        snap.rows.filter { it.size > ci && it[ci].isNotBlank() }.associateBy { it[ci].trim() }
-    else emptyMap()
-    fun cell(row: List<String>?, key: String): String {
-        if (row == null) return "--"
-        val i = idx[key] ?: return "--"
-        if (i >= row.size) return "--"
-        val v = row[i].trim()
-        return v.ifEmpty { "--" }
-    }
-    return module.elements.map { el ->
-        val row = byCode[el.code]
-        ElementRow(el.code, el.title, cell(row, "CC"), cell(row, "EX"), cell(row, "TP"), cell(row, "Moy"), cell(row, "Dec"))
-    }
 }
 
 @Composable
@@ -120,32 +98,27 @@ fun DashboardScreen(vm: AppViewModel) {
 @Composable
 fun GradesScreen(vm: AppViewModel) {
     val state by vm.state.collectAsState()
-    val modules = remember(state.semester) {
-        runCatching { Presets.modulesForSemester(state.semester) }.getOrDefault(emptyList())
+    val notes = state.notesView
+    if (notes == null || notes.modules.all { it.source == ma.ensam.schoolapp.ui.present.GradeSource.MISSING }) {
+        ma.ensam.schoolapp.ui.components.EmptyState("Aucune note — touchez « Check Now » sur le tableau de bord.", "📚")
+        return
     }
-    val resultByCode = state.calc?.modules?.associateBy { it.code } ?: emptyMap()
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         item {
-            val calc = state.calc
-            if (calc != null) {
-                Text(
-                    "Semester ${state.semester}: ${"%.2f".format(calc.semesterAverageFinal)} / 20",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            } else {
-                Text("No grades yet — tap Check Now on the Dashboard.")
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Semestre ${notes.semester}", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            notes.semesterAverage?.let { "%.2f / 20".format(it) } ?: "— / 20",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+                    Text("Validés ${notes.validatedCount}/${notes.totalCount}" + if (notes.anyEstimated) " · estimé" else "")
+                }
             }
         }
-        items(modules) { mod ->
-            val r = resultByCode[mod.code]
-            ModuleCard(
-                code = mod.code,
-                title = mod.title,
-                status = r?.status ?: ModuleStatus.NV,
-                avgFinal = r?.averageFinal ?: 0.0,
-                elements = elementRowsFor(state.snapshot, mod),
-            )
-        }
+        items(notes.modules) { ModuleCard(it) }
     }
 }
 
