@@ -183,7 +183,8 @@ def main(argv):
     key = argv[1]
     action = argv[2] if len(argv) > 2 else "poll"
 
-    # Optional action POST first; ignore its body, then fall through to poll.
+    # Optional action POST first. Best-effort: we ignore its result because the
+    # following poll reflects the resulting state and is authoritative.
     if action in ACTION_ENDPOINT:
         path, method = ACTION_ENDPOINT[action]
         http_json(base + path, key, method=method, timeout=25)
@@ -202,6 +203,7 @@ def main(argv):
     if out["history"]:
         save_seen(out["history"][0]["ts"])
     print(json.dumps(out))
+
 
 if __name__ == "__main__":
     try:

@@ -120,6 +120,7 @@ class TestBuildOutput(unittest.TestCase):
 
 import io
 import json as _json
+import shutil
 import tempfile
 from contextlib import redirect_stdout
 from urllib.parse import urlparse
@@ -143,10 +144,14 @@ class _FakeResp:
 class TestMain(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         os.environ["XDG_CACHE_HOME"] = self.tmp
         # Recompute cache paths inside the module to honor the temp dir.
         mod.CACHE_DIR = os.path.join(self.tmp, "schoolapp-widget")
         mod.SEEN_FILE = os.path.join(mod.CACHE_DIR, "last_seen.json")
+        # Restore the real urlopen after each test so a monkeypatch can't leak.
+        self._orig_urlopen = mod.urllib.request.urlopen
+        self.addCleanup(setattr, mod.urllib.request, "urlopen", self._orig_urlopen)
         self.routes = {
             "/api/status": {"watcher": "active", "last_check": "2026-06-16T11:59:00",
                             "next_check": "2026-06-16T12:30:00", "poll_interval": 120},
@@ -174,7 +179,7 @@ class TestMain(unittest.TestCase):
         out1 = self._run()
         self.assertTrue(out1["ok"])
         self.assertFalse(out1["new_change"])  # first run baselines silently
-        # Second run with an older last_seen already saved: still nothing new.
+        # Second run: last_seen now equals the newest ts, so still nothing new.
         out2 = self._run()
         self.assertFalse(out2["new_change"])
 
