@@ -5,6 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -17,6 +25,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import ma.ensam.schoolapp.data.prefs.EncryptedPrefs
@@ -57,17 +66,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class TabItem(val label: String, val icon: String)
+private data class TabItem(val label: String, val icon: ImageVector)
 
 @Composable
 private fun AppScaffold(vm: AppViewModel) {
     val tabs = listOf(
-        TabItem("Statut", "📊"),
-        TabItem("Notes", "📚"),
-        TabItem("Absences", "🚨"),
-        TabItem("Résultats", "🎓"),
-        TabItem("Historique", "🕘"),
-        TabItem("Réglages", "⚙️"),
+        TabItem("Statut", Icons.Default.Home),
+        TabItem("Notes", Icons.Default.Star),
+        TabItem("Absences", Icons.Default.Warning),
+        TabItem("Résultats", Icons.Default.CheckCircle),
+        TabItem("Historique", Icons.Default.DateRange),
+        TabItem("Réglages", Icons.Default.Settings),
     )
     var selected by rememberSaveable { mutableIntStateOf(0) }
     Scaffold(
@@ -77,7 +86,7 @@ private fun AppScaffold(vm: AppViewModel) {
                     NavigationBarItem(
                         selected = selected == i,
                         onClick = { selected = i },
-                        icon = { Text(t.icon) },
+                        icon = { Icon(t.icon, contentDescription = t.label) },
                         label = { Text(t.label) },
                     )
                 }
