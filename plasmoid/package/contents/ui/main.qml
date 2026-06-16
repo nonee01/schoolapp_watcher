@@ -11,10 +11,11 @@ import org.kde.notification
 PlasmoidItem {
     id: root
 
-    readonly property string scriptPath: Qt.resolvedUrl("../scripts/schoolapp_status.py").toString().replace("file://", "")
+    readonly property string scriptPath: Qt.resolvedUrl("../scripts/schoolapp_status.py").toString().replace(/^file:\/\//, "")
 
     property bool ok: false
     property bool loaded: false
+    property bool busy: false               // a backend request is in flight
     property string watcher: "unknown"     // active | inactive | paused | unknown
     property int nextCheckS: 0
     property int pollInterval: 0
@@ -79,7 +80,7 @@ PlasmoidItem {
         return m + "m " + (sec < 10 ? "0" : "") + sec + "s"
     }
 
-    function elide(str, n) {
+    function truncate(str, n) {
         if (!str) return ""
         return str.length > n ? str.substring(0, n - 1) + "…" : str
     }
@@ -104,7 +105,7 @@ PlasmoidItem {
         if (watcher === "paused") return "paused"
         if (latestSummary.length === 0) return "No changes"
         var ic = typeIcon[latestType] || ""
-        return (ic ? ic + " " : "") + elide(latestSummary, 28)
+        return (ic ? ic + " " : "") + truncate(latestSummary, 28)
     }
 
     Plasma5Support.DataSource {
@@ -114,6 +115,7 @@ PlasmoidItem {
         onNewData: function(source, data) {
             disconnectSource(source)
             root.loaded = true
+            root.busy = false
             var out = (data["stdout"] || "").trim()
             if (out.length === 0) {
                 root.ok = false
@@ -138,10 +140,16 @@ PlasmoidItem {
                 root.errorMsg = "parse error"
             }
         }
-        function poll() { connectSource("python3 '" + root.scriptPath + "' '"
-            + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "'") }
-        function action(name) { connectSource("python3 '" + root.scriptPath + "' '"
-            + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "' " + name) }
+        function poll() {
+            root.busy = true
+            connectSource("python3 '" + root.scriptPath + "' '"
+                + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "'")
+        }
+        function action(name) {
+            root.busy = true
+            connectSource("python3 '" + root.scriptPath + "' '"
+                + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "' " + name)
+        }
     }
 
     // Poll timer (network).
@@ -166,9 +174,9 @@ PlasmoidItem {
     toolTipSubText: {
         if (!loaded) return "Loading…"
         if (!ok) return "⚠ " + errorMsg
-        var s = "Watcher: " + watcher + "\n"
-        if (latestSummary.length > 0) s += "Latest: " + latestSummary + "\n"
-        return s + "Next check " + fmtCountdown(nextCheckS)
+        var s = "Watcher: " + watcher
+        if (latestSummary.length > 0) s += "\nLatest: " + latestSummary
+        return s + "\nNext check " + fmtCountdown(nextCheckS)
     }
 
     compactRepresentation: MouseArea {
@@ -219,7 +227,7 @@ PlasmoidItem {
                 }
                 Kirigami.Heading { text: "SchoolApp Watcher"; level: 3; Layout.fillWidth: true }
                 PlasmaComponents3.Label {
-                    text: root.ok ? "live" : "offline"
+                    text: !root.loaded ? "…" : root.ok ? "live" : "offline"
                     opacity: 0.6
                     color: root.ok ? Kirigami.Theme.textColor : Kirigami.Theme.neutralTextColor
                     font.pointSize: Kirigami.Theme.smallFont.pointSize
@@ -276,12 +284,14 @@ PlasmoidItem {
                         Layout.fillWidth: true
                         PlasmaComponents3.Button {
                             text: "Force check"; icon.name: "view-refresh"
+                            enabled: !root.busy
                             onClicked: exec.action("check")
                         }
                         PlasmaComponents3.Button {
                             text: root.watcher === "paused" || root.watcher === "inactive" ? "Resume" : "Pause"
                             icon.name: root.watcher === "paused" || root.watcher === "inactive"
                                 ? "media-playback-start" : "media-playback-pause"
+                            enabled: !root.busy
                             onClicked: exec.action(
                                 (root.watcher === "paused" || root.watcher === "inactive") ? "resume" : "pause")
                         }
@@ -375,7 +385,8 @@ PlasmoidItem {
                     font.pointSize: Kirigami.Theme.smallFont.pointSize; Layout.fillWidth: true
                 }
                 PlasmaComponents3.Button {
-                    text: "Refresh"; icon.name: "view-refresh"; onClicked: exec.poll()
+                    text: "Refresh"; icon.name: "view-refresh"
+                    enabled: !root.busy; onClicked: exec.poll()
                 }
             }
         }
