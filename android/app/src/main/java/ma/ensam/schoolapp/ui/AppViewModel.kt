@@ -18,6 +18,7 @@ import ma.ensam.schoolapp.data.repository.WatcherRepository
 import ma.ensam.schoolapp.domain.Calculator
 import ma.ensam.schoolapp.domain.Presets
 import ma.ensam.schoolapp.domain.SemesterResult
+import ma.ensam.schoolapp.domain.SnapshotMarks
 import ma.ensam.schoolapp.domain.model.Extras
 import ma.ensam.schoolapp.domain.model.Snapshot
 import ma.ensam.schoolapp.service.WatcherService
@@ -152,27 +153,5 @@ class AppViewModel @Inject constructor(
     }
 
     private fun computeCalc(snap: Snapshot, semester: String): SemesterResult =
-        Calculator.computeSemester(Presets.modulesForSemester(semester), marksFromSnapshot(snap))
-
-    private fun marksFromSnapshot(snap: Snapshot): Map<String, Double> {
-        val codeIdx = snap.headers.indexOf("CodeElem")
-        if (codeIdx < 0) return emptyMap()
-        val idx = snap.headers.withIndex().associate { (i, h) -> h to i }
-        val marks = HashMap<String, Double>()
-        fun get(row: List<String>, key: String): Double? {
-            val i = idx[key] ?: return null
-            if (i >= row.size) return null
-            return Calculator.parseMarkString(row[i])
-        }
-        for (row in snap.rows) {
-            if (codeIdx >= row.size) continue
-            val code = row[codeIdx].trim()
-            if (code.isEmpty()) continue
-            get(row, "CC")?.let { marks["$code.cc"] = it }
-            get(row, "EX")?.let { marks["$code.ecrit"] = it; marks["$code.ex"] = it }
-            get(row, "TP")?.let { marks["$code.tp"] = it }
-            get(row, "RAT")?.let { marks["$code.rat"] = it }
-        }
-        return marks
-    }
+        Calculator.computeSemester(Presets.modulesForSemester(semester), SnapshotMarks.fromSnapshot(snap))
 }
