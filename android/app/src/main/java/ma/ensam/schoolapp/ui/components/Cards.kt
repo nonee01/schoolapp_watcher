@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import ma.ensam.schoolapp.domain.ModuleStatus
 
 // Light variants
 val Green = Color(0xFF166534); val GreenBg = Color(0xFFDCFCE7)
@@ -62,48 +62,68 @@ fun StatusChip(label: String, fg: Color, bg: Color) {
     }
 }
 
-/** One element row of a module (already resolved to display strings). */
-data class ElementRow(
-    val code: String,
-    val title: String,
-    val cc: String,
-    val ex: String,
-    val tp: String,
-    val moy: String,
-    val dec: String,
-)
-
 @Composable
-fun ModuleCard(
-    code: String,
-    title: String,
-    status: ModuleStatus,
-    avgFinal: Double,
-    elements: List<ElementRow>,
-) {
-    val (fg, bg) = statusColors(status)
+fun ModuleCard(module: ma.ensam.schoolapp.ui.present.ModuleView) {
+    val (fg, bg) = statusColors(module.status)
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(code, style = MaterialTheme.typography.labelSmall)
-                    Text(title, style = MaterialTheme.typography.titleMedium)
+                Column(Modifier.weight(1f)) {
+                    Text(module.code, style = MaterialTheme.typography.labelSmall)
+                    Text(module.title, style = MaterialTheme.typography.titleMedium)
                 }
-                StatusChip("${status.name}  ${"%.2f".format(avgFinal)}", fg, bg)
-            }
-            elements.forEach { e ->
-                Column {
-                    Text("${e.code} - ${e.title}", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        "CC ${e.cc} · EX ${e.ex} · TP ${e.tp} · Moy ${e.moy} · ${e.dec}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                Column(horizontalAlignment = Alignment.End) {
+                    val label = if (module.average != null) "%.2f".format(module.average) else "-"
+                    StatusChip(label, fg, bg)
+                    if (module.source == ma.ensam.schoolapp.ui.present.GradeSource.ESTIMATED) {
+                        Text("estimé", style = MaterialTheme.typography.labelSmall, color = Amber)
+                    }
                 }
             }
+            ValidationBar(module, fg)
+            module.elements.forEach { ElementBlock(it, module.seuil) }
         }
     }
+}
+
+@Composable
+private fun ValidationBar(m: ma.ensam.schoolapp.ui.present.ModuleView, fg: Color) {
+    if (m.source == ma.ensam.schoolapp.ui.present.GradeSource.MISSING) {
+        Text("pas encore noté", style = MaterialTheme.typography.bodySmall); return
+    }
+    LinearProgressIndicator(
+        progress = { m.progressToSeuil },
+        color = fg,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    val label = if (m.status != ma.ensam.schoolapp.domain.ModuleStatus.NV) "validé"
+        else "${(m.progressToSeuil * 100).toInt()}% du seuil ${m.seuil.toInt()}"
+    Text(label, style = MaterialTheme.typography.labelSmall)
+}
+
+@Composable
+private fun ElementBlock(e: ma.ensam.schoolapp.ui.present.ElementView, seuil: Double) {
+    Column {
+        Text("${e.code} - ${e.title}", style = MaterialTheme.typography.bodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            e.cc?.let { CellText(it, seuil) }
+            e.ex?.let { CellText(it, seuil) }
+            e.tp?.let { CellText(it, seuil) }
+            if (e.moy.source != ma.ensam.schoolapp.ui.present.GradeSource.MISSING) CellText(e.moy, seuil)
+        }
+    }
+}
+
+@Composable
+private fun CellText(c: ma.ensam.schoolapp.ui.present.Cell, seuil: Double) {
+    val color = when {
+        c.value == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        c.value >= seuil -> if (isSystemInDarkTheme()) GreenD else Green
+        else -> if (isSystemInDarkTheme()) RedD else Red
+    }
+    Text("${c.label} ${c.display}", style = MaterialTheme.typography.bodySmall, color = color)
 }
