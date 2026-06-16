@@ -160,37 +160,52 @@ fun AbsencesScreen(vm: AppViewModel) {
 @Composable
 fun ResultsScreen(vm: AppViewModel) {
     val state by vm.state.collectAsState()
-    val mods = remember(state.extras) { state.extras.modules.values.sortedBy { it.code } }
-    val sems = remember(state.extras) { state.extras.semesters.values.toList() }
+    val results = state.resultsView
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item { Text("🎓 Semestres", style = MaterialTheme.typography.titleMedium) }
-        items(sems) { s ->
+        items(results.semesters) { s ->
             val (fg, bg) = decisionColors(s.dec)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${s.niveau} ${s.sem} · ${s.au}", style = MaterialTheme.typography.titleSmall)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("${s.niveau} ${s.sem}", style = MaterialTheme.typography.titleSmall)
+                            Text(s.au, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Text(s.moy, style = MaterialTheme.typography.headlineSmall)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Rang ${s.rankText}", style = MaterialTheme.typography.bodyMedium)
                         StatusChip(s.dec.ifBlank { "--" }, fg, bg)
                     }
-                    Text("Moy ${s.moy} · Rang ${s.rank}")
+                    if (s.rankPosition != null && s.rankTotal != null && s.rankTotal > 0) {
+                        LinearProgressIndicator(
+                            progress = { 1f - (s.rankPosition - 1).toFloat() / s.rankTotal },
+                            color = fg,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
-        if (sems.isEmpty()) item { Text("Aucun résultat de semestre publié.") }
+        if (results.semesters.isEmpty()) item { Text("Aucun résultat de semestre publié.") }
 
         item { Text("📋 Modules officiels", style = MaterialTheme.typography.titleMedium) }
-        items(mods) { m ->
+        items(results.officialModules) { m ->
             val (fg, bg) = decisionColors(m.dec)
             Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${m.code} · ${m.au}", style = MaterialTheme.typography.titleSmall)
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(m.title, style = MaterialTheme.typography.titleSmall)
+                            Text("${m.code} · ${m.au}", style = MaterialTheme.typography.labelSmall)
+                        }
                         StatusChip("${m.moy}  ${m.dec}", fg, bg)
                     }
                 }
             }
         }
-        if (mods.isEmpty()) item { Text("Aucun résultat officiel publié.") }
+        if (results.officialModules.isEmpty()) item { Text("Aucun résultat officiel publié.") }
     }
 }
 
