@@ -22,6 +22,10 @@ import ma.ensam.schoolapp.domain.SnapshotMarks
 import ma.ensam.schoolapp.domain.model.Extras
 import ma.ensam.schoolapp.domain.model.Snapshot
 import ma.ensam.schoolapp.service.WatcherService
+import ma.ensam.schoolapp.ui.present.NotesMapper
+import ma.ensam.schoolapp.ui.present.NotesView
+import ma.ensam.schoolapp.ui.present.ResultsMapper
+import ma.ensam.schoolapp.ui.present.ResultsView
 import javax.inject.Inject
 
 data class AppUiState(
@@ -39,6 +43,8 @@ data class AppUiState(
     val snapshot: Snapshot? = null,
     val calc: SemesterResult? = null,
     val extras: Extras = Extras(),
+    val notesView: NotesView? = null,
+    val resultsView: ResultsView = ResultsView(emptyList(), emptyList()),
     val lastCheckEpoch: Long = 0L,
     val nextCheckEpoch: Long = 0L,
 )
@@ -78,6 +84,8 @@ class AppViewModel @Inject constructor(
             snapshot = snap,
             extras = extras,
             calc = snap?.let { computeCalc(it, sem) },
+            notesView = buildNotes(snap, extras, sem),
+            resultsView = ResultsMapper.toResultsView(extras),
             lastCheckEpoch = prefs.lastHeartbeat,
             nextCheckEpoch = if (prefs.lastHeartbeat > 0) prefs.lastHeartbeat + _state.value.pollIntervalSeconds * 1000L else 0L,
         )
@@ -142,6 +150,8 @@ class AppViewModel @Inject constructor(
                     snapshot = snap,
                     extras = extras,
                     calc = snap?.let { computeCalc(it, sem) },
+                    notesView = buildNotes(snap, extras, sem),
+                    resultsView = ResultsMapper.toResultsView(extras),
                     message = result.summary,
                     lastCheckEpoch = nowMs,
                     nextCheckEpoch = nowMs + _state.value.pollIntervalSeconds * 1000L,
@@ -150,6 +160,11 @@ class AppViewModel @Inject constructor(
                 _state.value = _state.value.copy(loading = false, error = e.message ?: "Check failed")
             }
         }
+    }
+
+    private fun buildNotes(snap: Snapshot?, extras: Extras, sem: String): NotesView {
+        val modules = runCatching { Presets.modulesForSemester(sem) }.getOrDefault(emptyList())
+        return NotesMapper.toNotesView(snap, extras, modules, sem)
     }
 
     private fun computeCalc(snap: Snapshot, semester: String): SemesterResult =
