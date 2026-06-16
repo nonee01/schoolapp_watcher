@@ -29,6 +29,7 @@ PlasmoidItem {
     // Notification edge tracking: remember the newest ts we've already alerted on.
     property string lastNotifiedTs: ""
 
+    // Keep in sync with TYPE_ICON in scripts/schoolapp_status.py.
     readonly property var typeIcon: ({
         "grades": "📊", "absences": "🚫", "modules": "📋", "semesters": "🎓"
     })
@@ -148,7 +149,7 @@ PlasmoidItem {
         function action(name) {
             root.busy = true
             connectSource("python3 '" + root.scriptPath + "' '"
-                + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "' " + name)
+                + Plasmoid.configuration.apiUrl + "' '" + Plasmoid.configuration.apiKey + "' '" + name + "'")
         }
     }
 
