@@ -118,5 +118,83 @@ class TestBuildOutput(unittest.TestCase):
         self.assertEqual(out["history"], [])
 
 
+import io
+import json as _json
+import tempfile
+from contextlib import redirect_stdout
+
+
+class _FakeResp:
+    def __init__(self, payload, code=200):
+        self._body = _json.dumps(payload).encode()
+        self.code = code
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class TestMain(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        os.environ["XDG_CACHE_HOME"] = self.tmp
+        # Recompute cache paths inside the module to honor the temp dir.
+        mod.CACHE_DIR = os.path.join(self.tmp, "schoolapp-widget")
+        mod.SEEN_FILE = os.path.join(mod.CACHE_DIR, "last_seen.json")
+        self.routes = {
+            "/api/status": {"watcher": "active", "last_check": "2026-06-16T11:59:00",
+                            "next_check": "2026-06-16T12:30:00", "poll_interval": 120},
+            "/api/history": {"history": [
+                {"ts": "2026-06-16T11:58:00", "type": "grades", "summary": "Notes mises à jour — S4"}]},
+            "/api/grades/S4": {"semester": "S4", "modules": []},
+        }
+
+    def _fake_urlopen(self, req, timeout=0):
+        url = req.full_url if hasattr(req, "full_url") else req
+        for path, payload in self.routes.items():
+            if url.endswith(path):
+                return _FakeResp(payload)
+        return _FakeResp({}, code=404)
+
+    def _run(self, action="poll"):
+        mod.urllib.request.urlopen = self._fake_urlopen
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            mod.main(["http://localhost:8787", "k", action])
+        return _json.loads(buf.getvalue())
+
+    def test_first_run_baselines_then_detects(self):
+        out1 = self._run()
+        self.assertTrue(out1["ok"])
+        self.assertFalse(out1["new_change"])  # first run baselines silently
+        # Second run with an older last_seen already saved: still nothing new.
+        out2 = self._run()
+        self.assertFalse(out2["new_change"])
+
+    def test_new_change_after_newer_entry(self):
+        self._run()  # baseline at 11:58
+        self.routes["/api/history"]["history"].insert(
+            0, {"ts": "2026-06-16T12:05:00", "type": "modules", "summary": "Résultat module: X"})
+        out = self._run()
+        self.assertTrue(out["new_change"])
+        self.assertEqual(out["new_summaries"], ["Résultat module: X"])
+
+    def test_status_failure_is_graceful(self):
+        def boom(req, timeout=0):
+            raise urllib.error.URLError("offline")
+        mod.urllib.request.urlopen = boom
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            mod.main(["http://localhost:8787", "k", "poll"])
+        out = _json.loads(buf.getvalue())
+        self.assertFalse(out["ok"])
+        self.assertTrue(out["error"])
+
+
 if __name__ == "__main__":
     unittest.main()
