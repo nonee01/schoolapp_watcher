@@ -114,3 +114,97 @@ def build_output(status, history, grades, last_seen_ts, now=None):
         "error": "",
         "updated": now.strftime("%H:%M"),
     }
+
+
+# ----------------------------------------------------------------- io
+
+def http_json(url, api_key, method="GET", timeout=8):
+    """One request. Returns (data, None) or (None, error-string)."""
+    req = urllib.request.Request(url, method=method)
+    if api_key:
+        req.add_header("X-API-Key", api_key)
+    req.add_header("Accept", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8")), None
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            return None, "auth error (check API key)"
+        return None, f"http {e.code}"
+    except urllib.error.URLError:
+        return None, "offline (API unreachable)"
+    except Exception as e:  # noqa: BLE001 - never crash the widget
+        return None, str(e)[:60]
+
+
+def load_seen():
+    try:
+        with open(SEEN_FILE, "r", encoding="utf-8") as fh:
+            return json.load(fh).get("ts", "")
+    except Exception:
+        return ""
+
+
+def save_seen(ts):
+    if not ts:
+        return
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = SEEN_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump({"ts": ts}, fh)
+        os.replace(tmp, SEEN_FILE)
+    except Exception:
+        pass
+
+
+ACTION_ENDPOINT = {
+    "check": ("/api/check", "POST"),
+    "pause": ("/api/watcher/pause", "POST"),
+    "resume": ("/api/watcher/resume", "POST"),
+}
+
+
+def _fail(error):
+    print(json.dumps({
+        "ok": False, "watcher": "unknown", "next_check_s": 0, "poll_interval": 0,
+        "last_check": None, "last_change": None, "latest_change_type": "",
+        "latest_change_summary": "", "history": [], "grades": {},
+        "new_change": False, "new_summaries": [], "error": error,
+        "updated": datetime.now().strftime("%H:%M"),
+    }))
+
+
+def main(argv):
+    if len(argv) < 2:
+        _fail("usage: schoolapp_status.py <api_url> <api_key> [action]")
+        return
+    base = argv[0].rstrip("/")
+    key = argv[1]
+    action = argv[2] if len(argv) > 2 else "poll"
+
+    # Optional action POST first; ignore its body, then fall through to poll.
+    if action in ACTION_ENDPOINT:
+        path, method = ACTION_ENDPOINT[action]
+        http_json(base + path, key, method=method, timeout=25)
+
+    status, err = http_json(base + "/api/status", key)
+    if err:
+        _fail(err)
+        return
+    history_resp, _ = http_json(base + "/api/history", key)
+    grades, _ = http_json(base + "/api/grades/S4", key)
+    history = (history_resp or {}).get("history", [])
+
+    last_seen = load_seen()
+    out = build_output(status, history, grades or {}, last_seen)
+    # Persist the newest seen ts so the next poll treats current entries as seen.
+    if out["history"]:
+        save_seen(out["history"][0]["ts"])
+    print(json.dumps(out))
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except Exception as e:  # noqa: BLE001
+        _fail(str(e)[:60])
