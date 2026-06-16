@@ -84,6 +84,18 @@ PlasmoidItem {
         return str.length > n ? str.substring(0, n - 1) + "…" : str
     }
 
+    function relativeFor(tsIso) {
+        if (!tsIso) return ""
+        var t = new Date(tsIso)
+        if (isNaN(t.getTime())) return ""
+        var mins = Math.floor((Date.now() - t.getTime()) / 60000)
+        if (mins < 1) return "just now"
+        if (mins < 60) return mins + "m ago"
+        var h = Math.floor(mins / 60)
+        if (h < 24) return h + "h ago"
+        return Math.floor(h / 24) + "d ago"
+    }
+
     // Compact panel summary text.
     readonly property string compactText: {
         if (!loaded) return "…"
@@ -187,10 +199,185 @@ PlasmoidItem {
         }
     }
 
-    // Replaced with the full 3-tab popup in Task 7.
     fullRepresentation: Item {
         Layout.minimumWidth: Kirigami.Units.gridUnit * 18
-        Layout.minimumHeight: Kirigami.Units.gridUnit * 16
-        PlasmaComponents3.Label { anchors.centerIn: parent; text: "popup placeholder" }
+        Layout.minimumHeight: Kirigami.Units.gridUnit * 18
+        Layout.preferredWidth: Kirigami.Units.gridUnit * 20
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 22
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+
+            // Header
+            RowLayout {
+                Layout.fillWidth: true
+                Rectangle {
+                    width: Kirigami.Units.iconSizes.small * 0.6; height: width; radius: width / 2
+                    color: root.statusColor()
+                }
+                Kirigami.Heading { text: "SchoolApp Watcher"; level: 3; Layout.fillWidth: true }
+                PlasmaComponents3.Label {
+                    text: root.ok ? "live" : "offline"
+                    opacity: 0.6
+                    color: root.ok ? Kirigami.Theme.textColor : Kirigami.Theme.neutralTextColor
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize
+                }
+            }
+
+            QQC2.TabBar {
+                id: tabBar
+                Layout.fillWidth: true
+                QQC2.TabButton { text: "Status" }
+                QQC2.TabButton { text: "Changes" }
+                QQC2.TabButton { text: "Grades" }
+            }
+
+            StackLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                currentIndex: tabBar.currentIndex
+
+                // ---- STATUS TAB ----
+                ColumnLayout {
+                    spacing: Kirigami.Units.smallSpacing
+                    RowLayout {
+                        Layout.fillWidth: true
+                        PlasmaComponents3.Label { text: "Service"; opacity: 0.8; Layout.fillWidth: true }
+                        PlasmaComponents3.Label { text: root.watcher; font.bold: true; color: root.statusColor() }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        PlasmaComponents3.Label { text: "Next check"; opacity: 0.8; Layout.fillWidth: true }
+                        PlasmaComponents3.Label { text: root.fmtCountdown(root.nextCheckS); font.bold: true }
+                    }
+                    QQC2.ProgressBar {
+                        Layout.fillWidth: true
+                        from: 0; to: 1
+                        value: root.pollInterval > 0
+                            ? (1 - Math.min(1, root.nextCheckS / root.pollInterval)) : 0
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        PlasmaComponents3.Label { text: "Last change"; opacity: 0.8; Layout.fillWidth: true }
+                        PlasmaComponents3.Label {
+                            text: root.history.length > 0 ? root.relativeFor(root.history[0].ts) : "-"
+                        }
+                    }
+                    Item { Layout.fillHeight: true }
+                    PlasmaComponents3.Label {
+                        visible: !root.ok
+                        Layout.fillWidth: true; wrapMode: Text.WordWrap
+                        color: Kirigami.Theme.neutralTextColor
+                        text: "⚠ " + root.errorMsg
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        PlasmaComponents3.Button {
+                            text: "Force check"; icon.name: "view-refresh"
+                            onClicked: exec.action("check")
+                        }
+                        PlasmaComponents3.Button {
+                            text: root.watcher === "paused" || root.watcher === "inactive" ? "Resume" : "Pause"
+                            icon.name: root.watcher === "paused" || root.watcher === "inactive"
+                                ? "media-playback-start" : "media-playback-pause"
+                            onClicked: exec.action(
+                                (root.watcher === "paused" || root.watcher === "inactive") ? "resume" : "pause")
+                        }
+                    }
+                }
+
+                // ---- CHANGES TAB ----
+                QQC2.ScrollView {
+                    clip: true
+                    ListView {
+                        model: root.history
+                        spacing: Kirigami.Units.smallSpacing
+                        delegate: RowLayout {
+                            required property var modelData
+                            width: ListView.view ? ListView.view.width : implicitWidth
+                            PlasmaComponents3.Label {
+                                text: root.typeIcon[modelData.type] || "•"
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+                                PlasmaComponents3.Label {
+                                    text: modelData.summary
+                                    Layout.fillWidth: true; wrapMode: Text.WordWrap
+                                    font.bold: modelData.new === true
+                                }
+                                PlasmaComponents3.Label {
+                                    text: root.relativeFor(modelData.ts)
+                                    opacity: 0.6; font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                }
+                            }
+                            PlasmaComponents3.Label {
+                                visible: modelData.new === true
+                                text: "NEW"
+                                color: Kirigami.Theme.highlightColor
+                                font.bold: true; font.pointSize: Kirigami.Theme.smallFont.pointSize
+                            }
+                        }
+                    }
+                }
+
+                // ---- GRADES TAB ----
+                QQC2.ScrollView {
+                    clip: true
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: Kirigami.Units.smallSpacing
+                        Repeater {
+                            model: root.gradeModules
+                            delegate: ColumnLayout {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                spacing: 1
+                                PlasmaComponents3.Label {
+                                    text: (modelData.code || "") + " - " + (modelData.title || "")
+                                    font.bold: true; Layout.fillWidth: true; elide: Text.ElideRight
+                                }
+                                Repeater {
+                                    model: modelData.elements || []
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        PlasmaComponents3.Label {
+                                            text: modelData.code; opacity: 0.8; Layout.fillWidth: true
+                                        }
+                                        PlasmaComponents3.Label {
+                                            text: modelData.moy && modelData.moy !== "--" ? modelData.moy : "-"
+                                            color: (modelData.moy && modelData.moy !== "--")
+                                                ? Kirigami.Theme.positiveTextColor
+                                                : Kirigami.Theme.disabledTextColor
+                                            font.bold: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        PlasmaComponents3.Label {
+                            visible: root.gradeModules.length === 0
+                            text: "No snapshot yet"; opacity: 0.6
+                        }
+                    }
+                }
+            }
+
+            // Footer
+            Kirigami.Separator { Layout.fillWidth: true }
+            RowLayout {
+                Layout.fillWidth: true
+                PlasmaComponents3.Label {
+                    text: "Updated " + root.updated; opacity: 0.6
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize; Layout.fillWidth: true
+                }
+                PlasmaComponents3.Button {
+                    text: "Refresh"; icon.name: "view-refresh"; onClicked: exec.poll()
+                }
+            }
+        }
     }
 }
