@@ -90,3 +90,27 @@ def annotate_history(history, last_seen_ts):
         if is_new:
             new_summaries.append(e.get("summary", ""))
     return annotated, new_summaries
+
+
+def build_output(status, history, grades, last_seen_ts, now=None):
+    """Assemble the JSON payload the widget consumes."""
+    if now is None:
+        now = datetime.now()
+    annotated, new_summaries = annotate_history(history, last_seen_ts)
+    latest = annotated[0] if annotated else None
+    return {
+        "ok": True,
+        "watcher": status.get("watcher", "unknown"),
+        "next_check_s": next_check_seconds(status, now),
+        "poll_interval": status.get("poll_interval", 0),
+        "last_check": status.get("last_check"),
+        "last_change": latest["ts"] if latest else None,
+        "latest_change_type": latest["type"] if latest else "",
+        "latest_change_summary": latest["summary"] if latest else "",
+        "history": annotated,
+        "grades": grades or {},
+        "new_change": bool(new_summaries),
+        "new_summaries": new_summaries,
+        "error": "",
+        "updated": now.strftime("%H:%M"),
+    }
