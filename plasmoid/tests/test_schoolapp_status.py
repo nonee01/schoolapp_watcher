@@ -122,6 +122,7 @@ import io
 import json as _json
 import tempfile
 from contextlib import redirect_stdout
+from urllib.parse import urlparse
 
 
 class _FakeResp:
@@ -155,9 +156,10 @@ class TestMain(unittest.TestCase):
         }
 
     def _fake_urlopen(self, req, timeout=0):
-        url = req.full_url if hasattr(req, "full_url") else req
+        full = req.full_url if hasattr(req, "full_url") else req
+        url_path = urlparse(full).path  # ignore any ?query (e.g. ?limit=10)
         for path, payload in self.routes.items():
-            if url.endswith(path):
+            if url_path == path:
                 return _FakeResp(payload)
         return _FakeResp({}, code=404)
 

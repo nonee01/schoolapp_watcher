@@ -192,7 +192,7 @@ def main(argv):
     if err:
         _fail(err)
         return
-    history_resp, _ = http_json(base + "/api/history", key)
+    history_resp, _ = http_json(base + "/api/history?limit=10", key)
     grades, _ = http_json(base + "/api/grades/S4", key)
     history = (history_resp or {}).get("history", [])
 
