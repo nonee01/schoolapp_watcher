@@ -75,5 +75,48 @@ class TestAnnotateHistory(unittest.TestCase):
         self.assertEqual(new_summaries, [])
 
 
+class TestBuildOutput(unittest.TestCase):
+    def setUp(self):
+        self.now = datetime(2026, 6, 16, 12, 0, 0)
+        self.status = {
+            "watcher": "active",
+            "last_check": "2026-06-16T11:59:00",
+            "next_check": "2026-06-16T12:01:30",
+            "poll_interval": 120,
+        }
+        self.history = [
+            {"ts": "2026-06-16T11:58:00", "type": "grades", "summary": "Notes mises à jour — S4"},
+            {"ts": "2026-06-15T16:41:31", "type": "modules", "summary": "Résultat module: Algèbre 2 — RAT (9.08)"},
+        ]
+        self.grades = {"semester": "S4", "modules": [
+            {"code": "API45", "title": "Analyse", "moy": "12.5", "validated": True,
+             "elements": [{"code": "API451", "cc": "14.5", "ex": "--", "tp": "--", "moy": "14.5*"}]},
+        ]}
+
+    def test_shape_and_new_change(self):
+        out = mod.build_output(self.status, self.history, self.grades,
+                               last_seen_ts="2026-06-16T11:00:00", now=self.now)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["watcher"], "active")
+        self.assertEqual(out["next_check_s"], 90)
+        self.assertEqual(out["poll_interval"], 120)
+        self.assertEqual(out["latest_change_type"], "grades")
+        self.assertEqual(out["latest_change_summary"], "Notes mises à jour — S4")
+        self.assertTrue(out["new_change"])
+        self.assertEqual(out["new_summaries"], ["Notes mises à jour — S4"])
+        self.assertEqual(out["history"][0]["new"], True)
+        self.assertEqual(out["history"][1]["new"], False)
+        self.assertEqual(out["grades"]["modules"][0]["code"], "API45")
+        self.assertEqual(out["error"], "")
+
+    def test_empty_history(self):
+        out = mod.build_output(self.status, [], self.grades,
+                               last_seen_ts="2026-06-16T11:00:00", now=self.now)
+        self.assertFalse(out["new_change"])
+        self.assertEqual(out["latest_change_summary"], "")
+        self.assertEqual(out["latest_change_type"], "")
+        self.assertEqual(out["history"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
