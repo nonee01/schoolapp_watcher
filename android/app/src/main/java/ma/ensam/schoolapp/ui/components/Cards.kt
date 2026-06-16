@@ -1,5 +1,6 @@
 package ma.ensam.schoolapp.ui.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,28 +18,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ma.ensam.schoolapp.domain.ModuleStatus
 
-val Green = Color(0xFF166534)
-val GreenBg = Color(0xFFDCFCE7)
-val Amber = Color(0xFF92400E)
-val AmberBg = Color(0xFFFEF3C7)
-val Red = Color(0xFF991B1B)
-val RedBg = Color(0xFFFEE2E2)
-val Gray = Color(0xFF374151)
-val GrayBg = Color(0xFFF3F4F6)
+// Light variants
+val Green = Color(0xFF166534); val GreenBg = Color(0xFFDCFCE7)
+val Amber = Color(0xFF92400E); val AmberBg = Color(0xFFFEF3C7)
+val Red = Color(0xFF991B1B);   val RedBg = Color(0xFFFEE2E2)
+val Gray = Color(0xFF374151);  val GrayBg = Color(0xFFF3F4F6)
+// Dark variants (lighter foreground, deep background)
+val GreenD = Color(0xFF86EFAC); val GreenBgD = Color(0xFF14532D)
+val AmberD = Color(0xFFFCD34D); val AmberBgD = Color(0xFF78350F)
+val RedD = Color(0xFFFCA5A5);   val RedBgD = Color(0xFF7F1D1D)
+val GrayD = Color(0xFFD1D5DB);  val GrayBgD = Color(0xFF374151)
 
-fun statusColors(status: ModuleStatus): Pair<Color, Color> = when (status) {
-    ModuleStatus.VORD -> Green to GreenBg
-    ModuleStatus.RAT -> Amber to AmberBg
-    ModuleStatus.NV -> Red to RedBg
+@Composable
+fun statusColors(status: ma.ensam.schoolapp.domain.ModuleStatus): Pair<Color, Color> {
+    val dark = isSystemInDarkTheme()
+    return when (status) {
+        ma.ensam.schoolapp.domain.ModuleStatus.VORD -> if (dark) GreenD to GreenBgD else Green to GreenBg
+        ma.ensam.schoolapp.domain.ModuleStatus.RAT -> if (dark) AmberD to AmberBgD else Amber to AmberBg
+        ma.ensam.schoolapp.domain.ModuleStatus.NV -> if (dark) RedD to RedBgD else Red to RedBg
+    }
 }
 
-/** Color a raw decision string (VORD/VRAT/VRAC/V… green, NV red, else gray). */
+@Composable
 fun decisionColors(dec: String): Pair<Color, Color> {
+    val dark = isSystemInDarkTheme()
     val d = dec.trim().uppercase()
     return when {
-        d.startsWith("V") -> Green to GreenBg
-        d == "NV" -> Red to RedBg
-        else -> Gray to GrayBg
+        d.startsWith("V") -> if (dark) GreenD to GreenBgD else Green to GreenBg
+        d == "NV" -> if (dark) RedD to RedBgD else Red to RedBg
+        else -> if (dark) GrayD to GrayBgD else Gray to GrayBg
     }
 }
 
