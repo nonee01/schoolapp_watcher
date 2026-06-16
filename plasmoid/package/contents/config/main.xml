@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="apiUrl" type="String">
+            <label>Base URL of the SchoolApp watcher API</label>
+            <default>http://localhost:8787</default>
+        </entry>
+        <entry name="apiKey" type="String">
+            <label>X-API-Key for the watcher API</label>
+            <default></default>
+        </entry>
+        <entry name="refreshInterval" type="Int">
+            <label>Poll interval in seconds</label>
+            <default>30</default>
+        </entry>
+        <entry name="notifyEnabled" type="Bool">
+            <label>Notify on a new change</label>
+            <default>true</default>
+        </entry>
+    </group>
+</kcfg>
