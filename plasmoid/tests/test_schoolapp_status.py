@@ -27,6 +27,10 @@ class TestRelativeTime(unittest.TestCase):
     def test_days(self):
         self.assertEqual(mod.relative_time("2026-06-14T12:00:00", self.now), "2d ago")
 
+    def test_exactly_60_minutes(self):
+        # Boundary between the "Nm ago" and "Nh ago" branches.
+        self.assertEqual(mod.relative_time("2026-06-16T11:00:00", self.now), "1h ago")
+
     def test_bad_input(self):
         self.assertEqual(mod.relative_time("not-a-date", self.now), "")
 
@@ -64,7 +68,8 @@ class TestAnnotateHistory(unittest.TestCase):
         self.assertFalse(any(a["new"] for a in annotated))
         self.assertEqual(new_summaries, [])
 
-    def test_nothing_new(self):
+    def test_exact_boundary_not_flagged(self):
+        # last_seen equal to the newest ts: strict '>' means nothing is new.
         annotated, new_summaries = mod.annotate_history(self.HIST, "2026-06-15T23:40:24")
         self.assertFalse(any(a["new"] for a in annotated))
         self.assertEqual(new_summaries, [])
