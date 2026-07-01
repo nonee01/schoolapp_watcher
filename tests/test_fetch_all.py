@@ -1,6 +1,7 @@
 import requests
 
 from schoolapp.client import SCHOOLAPP_BASE, SchoolAppClient
+from schoolapp.models import Document
 from tests.conftest import FIXTURES
 
 LOGIN_FORM = ('<html><form action="/login"><input name="_csrf" value="tok"/>'
@@ -23,8 +24,11 @@ PAGES = {
 
 
 class FakeResponse:
-    def __init__(self, text: str, status: int = 200):
+    def __init__(self, text: str = "", status: int = 200, content: bytes | None = None,
+                 content_type: str = "text/html"):
         self.text, self.status_code = text, status
+        self.content = content if content is not None else text.encode()
+        self.headers = {"Content-Type": content_type}
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -42,6 +46,8 @@ class FakeSession:
     def _page(self, path: str) -> FakeResponse:
         if path == "/login" or not self.logged_in:
             return FakeResponse(LOGIN_FORM)
+        if path.startswith("/student/documents/"):
+            return FakeResponse(content=b"%PDF-1.4 fake", content_type="application/pdf")
         name = PAGES.get(path)
         if name is None:
             return FakeResponse("<html><body>rien</body></html>")
@@ -130,3 +136,18 @@ def test_mark_statistics_for_one_element():
 def test_mark_statistics_unknown_element_is_empty():
     client, _ = make_client()
     assert client.mark_statistics("ZZZ999") == []
+
+
+def test_download_document_bytes():
+    client, _ = make_client()
+    docs = client.documents()
+    assert docs[0].kind == "attestation-scolarite"
+    assert client.download(docs[0]).startswith(b"%PDF")
+
+
+def test_download_reauths_on_expiry():
+    client, session = make_client()
+    session.logged_in = False  # session expired since login
+    doc = Document(kind="attestation-scolarite", url="/student/documents/attestation-scolarite")
+    assert client.download(doc).startswith(b"%PDF")
+    assert session.logged_in
