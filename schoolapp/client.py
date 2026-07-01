@@ -197,6 +197,19 @@ class SchoolAppClient:
         sr = semester_results if semester_results is not None else self.semester_results()
         return build_documents(yr, sr)
 
+    def download(self, doc: Document, _retried: bool = False) -> bytes:
+        """Fetch a document's bytes (PDF). Explicit step - never part of fetch_all."""
+        self._throttle()
+        resp = self.session.get(self.base_url + doc.url, timeout=self.timeout)
+        resp.raise_for_status()
+        ctype = resp.headers.get("Content-Type", "").lower()
+        if "html" in ctype and looks_like_login_page(resp.text):
+            if _retried or not self._email:
+                raise RuntimeError("Session expired and re-authentication failed")
+            self._do_login()
+            return self.download(doc, _retried=True)
+        return resp.content
+
     # ── institution-wide catalog (spec §11) ─────────────────────────────
 
     def catalog_options(self) -> dict:
