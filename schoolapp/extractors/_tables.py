@@ -2,8 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Callable
 
 from bs4 import BeautifulSoup
+
+# resource name -> (header signature, pure parser). Populated by the extractor
+# modules at import time; lets a consumer diff every table-shaped resource
+# through one generic code path.
+REGISTRY: dict[str, tuple[frozenset[str], Callable[[str], object]]] = {}
+
+
+def register(name: str, signature: set[str], parser: Callable[[str], object]) -> None:
+    REGISTRY[name] = (frozenset(signature), parser)
 
 
 def normalize_cell(text: str) -> str:
