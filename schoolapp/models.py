@@ -179,8 +179,10 @@ class StudentData:
     year_results: list[YearResult] = field(default_factory=list)
     diploma: DiplomaResult | None = None
     absences: list[Absence] = field(default_factory=list)
+    absence_summary: list[dict[str, str]] = field(default_factory=list)
     sanctions: list[Sanction] = field(default_factory=list)
     courses: list[CourseEnrollment] = field(default_factory=list)
+    stats: list[MarkStatistics] = field(default_factory=list)
     documents: list[Document] = field(default_factory=list)
     fetched_at: str = ""
     errors: dict[str, str] = field(default_factory=dict)

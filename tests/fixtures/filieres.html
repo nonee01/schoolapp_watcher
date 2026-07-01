@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>:: SchoolApp ENSAM ::</title>
+<meta name="description" content="SchoolApp ENSAM Meknes">
+<meta name="author" content="E. Zemmouri">
+<link rel="icon" href="/img/ensam_icone.png">
+  
+<!-- Tell the browser to be responsive to screen width -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Bootstrap -->
+<link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css" />
+<!-- Font Awesome -->
+<link rel="stylesheet" href="/adminlte3/plugins/fontawesome-free/css/all.min.css">
+<!-- Ionicons -->
+<link rel="stylesheet" href="/adminlte3/plugins/ionicframework/css/ionicons.min.css">
+  
+<!-- DataTables -->
+<link rel="stylesheet" href="/DataTables/DataTables-1.10.20/css/dataTables.bootstrap4.min.css" />
+<link rel="stylesheet" href="/DataTables/Select-1.3.1/css/select.dataTables.min.css" />
+<link rel="stylesheet" href="/DataTables/Buttons-1.6.1/css/buttons.dataTables.min.css" />
+<link rel="stylesheet" href="/DataTables/Scroller-2.0.1/css/scroller.bootstrap4.min.css" />
+
+<!-- Theme style -->
+<link rel="stylesheet" href="/adminlte3/dist/css/adminlte.css">
+
+<link rel="stylesheet" href="/css/mycss.css" />
+
+<!-- overlayScrollbars -->
+<link rel="stylesheet" href="/adminlte3/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="/adminlte3/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+
+<!-- Google Font: Source Sans Pro -->
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+
+<!-- jQuery -->
+<script src="/adminlte3/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="/adminlte3/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- DataTables -->
+<script src="/DataTables/DataTables-1.10.20/js/jquery.dataTables.min.js"></script>
+<script src="/DataTables/DataTables-1.10.20/js/dataTables.bootstrap4.min.js"></script>
+		
+<script src="/DataTables/Select-1.3.1/js/dataTables.select.min.js"></script>
+<script src="/DataTables/Buttons-1.6.1/js/dataTables.buttons.min.js"></script>
+<script src="/DataTables/Scroller-2.0.1/js/dataTables.scroller.min.js"></script>		
+		
+<script src="/DataTables/JSZip-2.5.0/jszip.min.js"></script>
+<script src="/DataTables/pdfmake-0.1.36/pdfmake.min.js"></script>
+<script src="/DataTables/pdfmake-0.1.36/vfs_fonts.js"></script>
+<script src="/DataTables/Buttons-1.6.1/js/buttons.html5.min.js"></script>
+<script src="/DataTables/Buttons-1.6.1/js/buttons.print.min.js"></script>
+
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+    </ul>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+    
+      <!-- Messages Dropdown Menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="modal" data-target="#logoutModal" href="#">
+          Logout <i class="fas fa-sign-out-alt"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <a href="#" class="dropdown-item">
+            <!-- Message Start -->
+            
+            <!-- Message End -->
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
+        </div>
+      </li>
+      
+      
+      <!-- Messages Dropdown Menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="far fa-comments"></i>
+          <span class="badge badge-danger navbar-badge">0</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <a href="#" class="dropdown-item">
+            <!-- Message Start -->
+            
+            <!-- Message End -->
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
+        </div>
+      </li>
+
+
+      <!-- Notifications Dropdown Menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="far fa-bell"></i>
+          <span class="badge badge-warning navbar-badge">0</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <span class="dropdown-item dropdown-header">0 Notifications</span>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-envelope mr-2"></i> 0 new messages
+            <span class="float-right text-muted text-sm">0 mins</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
+        </div>
+      </li>
+
+
+      <li class="nav-item">
+        <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
+          <i class="fas fa-th-large"></i>
+        </a>
+      </li>
+
+    </ul>
+  </nav> <!-- /.navbar -->
+
+  <!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="index3.html" class="brand-link">
+      <img src="/img/ensam_logo_01.png" alt="SchoolApp ENSAM" class="brand-image img-circle elevation-3"
+           style="opacity: .8">
+      <span class="brand-text font-weight-light">SchoolApp</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user panel (optional) -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          <img src="photo.png" class="img-circle elevation-2" alt="User Image">
+        </div>
+        <div class="info">
+        	<a class="d-block">
+        	  <span class="d-block">Jane Doe</span>
+        	  <span class="d-block">student</span>
+        	</a>
+        </div>
+      </div>
+
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          
+          <li class="nav-item menu-open">
+            <a href="/index" class="nav-link">
+              <i class="nav-icon fa fa-home"></i>
+              <p>Home</p>
+            </a>
+          </li>
+          
+          
+          
+          <li class="nav-item">
+            <a href="/profil/index" class="nav-link menu-item">
+              <i class="nav-icon fa fa-address-card"></i>
+              <p>Profil</p>
+            </a>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item">
+            <a href="/choixform/form/choixfiliere3a" class="nav-link menu-item">
+              <i class="nav-icon fas fa-check-circle"></i>
+              <p>Choix Filières 3A</p>
+            </a>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item">
+            <a href="/choixform/form/mobilite4a" class="nav-link menu-item">
+              <i class="nav-icon fas fa-check-circle"></i>
+              <p>Mobilité 4A</p>
+            </a>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item">
+            <a href="/student/inscriptioncours" class="nav-link menu-item">
+              <i class="nav-icon fa  fa-book"></i>
+              <p>Mes cours</p>
+            </a>
+          </li>
+          
+          
+          
+          
+          
+          
+          
+          <li class="nav-item has-treeview">
+            <a class="nav-link">
+              <i class="nav-icon fa fa-check-square"></i>
+              <p>
+              	<span>Mes Notes</span>
+              	<i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/student/noteselem-encours" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Elements en cours</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/notesmod-encours" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Modules en cours</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/noteselem" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Elements</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/notesmod" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Modules</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/notesannee" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Années</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/notessem" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Semestres</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/notesdiplome" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Diplôme</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item has-treeview">
+            <a class="nav-link">
+              <i class="nav-icon fa fa-exclamation-circle"></i>
+              <p>
+              	<span>Absence</span>
+              	<i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/student/absence/bilan" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Bilan Absence</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/student/absence/sanctions" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Sanctions</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item has-treeview">
+            <a class="nav-link">
+              <i class="nav-icon fa fa-sitemap"></i>
+              <p>
+              	<span>Plan Etudes</span>
+              	<i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/plan-etudes-view/filieres" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Filières</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/plan-etudes-view/modules" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Modules / Eléments</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          
+          
+          
+          
+          
+          <li class="nav-item has-treeview">
+            <a class="nav-link">
+              <i class="nav-icon fa fa-gavel"></i>
+              <p>
+              	<span>Réglement Evaluation</span>
+              	<i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/files/reglement/reglement_evaluation_ensam_CE_2019-10-22_CU_2019-12-25_ar.pdf" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Version Ar</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/files/reglement/reglement_evaluation_ensam_CE_2019-10-22_CU_2019-12-25_fr.pdf" class="nav-link menu-item">
+                  
+                  <i class="nav-icon fa fa-angle-right text-orange"></i>
+                  <p>Version Fr</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          
+          
+          
+          <li class="nav-item menu-open">
+            <a href="http://www.ensam-umi.ac.ma" class="nav-link" target="_blank">
+              <i class="nav-icon fas fa-external-link-alt"></i>
+              <p>ENSAM Meknes</p>
+            </a>
+          </li>      
+        </ul>
+      </nav> <!-- /.sidebar-menu -->
+      
+    </div> <!-- /.sidebar -->
+  </aside>
+
+
+
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper" id="pagecontent">
+  
+  
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h4 class="m-0 text-dark">Liste des filières</h4>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <section class="content">
+<div class="container-fluid">
+<div class="row">
+<div class="col-12">
+	
+
+
+<div class="card card-primary card-outline">
+<div class="card-body">
+
+	<div class="table-responsive">
+		<table class="table table-striped table-sm mb-1 display">
+			<thead class="table-primary">
+				<tr>
+					<th>Code</th>
+					<th>Intitule</th>
+					<th>Departement</th>
+					<th>Accreditation</th>
+					<th>Descriptif</th>
+					<th>Plan_Etudes</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>API-MPT</td>
+					<td>Années Préparatoires Intégrées : Mathématique, Physique et Technologie</td>
+					<td>AEEE</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GC24</td>
+					<td>Génie Civil</td>
+					<td>Mécanique</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GE-DI</td>
+					<td>Génie Electromécanique : Digitalisation Industrielle</td>
+					<td>AEEE</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GE-MCI</td>
+					<td>Génie Electromécanique : Maintenance et Commande Industrielles</td>
+					<td>AEEE</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GI-ILSI</td>
+					<td>Génie Informatique : Ingénierie Logicielle et Systèmes Intelligents</td>
+					<td>Maths Info</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GIEO</td>
+					<td>Génie Industriel : Excellence Opérationnelle</td>
+					<td>GIP</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GIP24</td>
+					<td>Génie Industriel et Productique</td>
+					<td>GIP</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GM-CISM</td>
+					<td>Génie Mécanique : Conception et Industrialisation des Systèmes Mécaniques</td>
+					<td>Mécanique</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GM-IMS</td>
+					<td>Génie Mécanique : Ingénierie Mécanique et Structures</td>
+					<td>Mécanique</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GM-MPF</td>
+					<td>Génie Mécanique : Matériaux et Procédés de Fabrication</td>
+					<td>Matériaux</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GME24</td>
+					<td>Génie Mécanique : Energétique</td>
+					<td>Energétique</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>IATD-SI</td>
+					<td>Intelligence Artificielle et Technologies des Données : Systèmes Industriels</td>
+					<td>Maths Info</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>PEI</td>
+					<td>Parcours Electro Industriel</td>
+					<td>ENSAM</td>
+					<td>0</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>PM</td>
+					<td>Parcours Mécanique</td>
+					<td>ENSAM</td>
+					<td>0</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>API</td>
+					<td>Années Préparatoires Intégrées</td>
+					<td>AEEE</td>
+					<td>2020</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>CPI</td>
+					<td>Classes Préparatoires Intégrées</td>
+					<td>MI</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>TC3A-24</td>
+					<td>Tronc Commun 3A - 2024</td>
+					<td>ENSAM</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>TC4A-24</td>
+					<td>Tronc Commun 4A - 2024</td>
+					<td>ENSAM</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>TC4A</td>
+					<td>Tronc Commun 4A</td>
+					<td>ENSAM</td>
+					<td>2018</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>TC5A</td>
+					<td>Tronc Commun 5A</td>
+					<td>ENSAM</td>
+					<td>2018</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GEC</td>
+					<td>Génie Electromécanique : Commande et Management Industriel</td>
+					<td>AEEE</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GEE</td>
+					<td>Génie Electromécanique : Energie et Maintenance Electromécanique</td>
+					<td>AEEE</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GIIA</td>
+					<td>Génie Industriel : Intelligence Artificielle et Data Science</td>
+					<td>Mathématiques Informatique</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GIPR</td>
+					<td>Génie Industriel et Productique</td>
+					<td>GIP</td>
+					<td>2020</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GME</td>
+					<td>Génie Mécanique : Energétique</td>
+					<td>Energétique</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GMP</td>
+					<td>Génie Mécanique : Procédés de Fabrication Industrielle</td>
+					<td>Matériaux et Procédés</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GMS</td>
+					<td>Génie Mécanique : Structures et Ingénierie des Produits</td>
+					<td>GMS</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>CIVIL</td>
+					<td>Génie Civil</td>
+					<td>GM</td>
+					<td>2019</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>DS2M</td>
+					<td>Master science des données pour une industrie intelligente</td>
+					<td>GIP</td>
+					<td>2024</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>EMSI</td>
+					<td>Electromécanique et Systèmes Industriels</td>
+					<td>AEEE</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GC</td>
+					<td>Génie Civil</td>
+					<td>GM</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GIP</td>
+					<td>Génie Industriel et Productique</td>
+					<td>GIP</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GM</td>
+					<td>Génie Mécanique</td>
+					<td>GM</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>GTIER</td>
+					<td>Génie Thermique Industrielle et Energies Renouvelables</td>
+					<td>Energ</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>IPP</td>
+					<td>Industrialisation des Produits et Procédés</td>
+					<td>Mat</td>
+					<td>2014</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>TC3A</td>
+					<td>Tronc Commun 3A</td>
+					<td>ENSAM</td>
+					<td>2018</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+				<tr>
+					<td>M2I</td>
+					<td>Master Modélisation Mathématique en Ingénierie</td>
+					<td>MI</td>
+					<td>2017</td>
+					<td></td>
+					<td></td>
+					
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+</div>
+</div>
+			
+</div> <!-- /.col -->
+</div> <!-- /.row -->
+</div> <!-- /.container-fluid -->
+</section>
+
+  </div> <!-- /.content-wrapper -->
+  
+  
+  <footer class="main-footer">
+    <strong>Copyright © <a href="http://www.ensam-umi.ac.ma" target="_blank">ENSAM</a> - Meknes</strong>
+    <div class="float-right d-none d-sm-inline-block">
+      <b>SchoolApp v3.0</b>
+    </div>
+  </footer>
+
+  <!-- Control Sidebar -->
+  <aside class="control-sidebar control-sidebar-dark">
+    <!-- Control sidebar content goes here -->
+  </aside> <!-- /.control-sidebar -->
+</div> <!-- ./wrapper -->
+
+
+
+
+
+
+
+<div class="modal fade" id="modal-lg">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-body form-container" id="modal-lg-content"></div>
+    </div> <!-- /.modal-content -->
+  </div> <!-- /.modal-dialog -->
+</div> <!-- /.modal -->
+
+
+<!-- Logout Modal-->
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel"><strong>Ready to Leave?</strong></h5>
+      </div>
+      <div class="modal-body">Select "Logout" to end your current session.</div>
+      <div class="modal-footer">
+        <button class="btn btn-default" type="button" data-dismiss="modal">Cancel</button>
+        <a class="btn btn-primary" href="/logout">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ChartJS -->
+<script src="/adminlte3/plugins/chart.js/Chart.min.js"></script>
+<!-- Sparkline -->
+<script src="/adminlte3/plugins/sparklines/sparkline.js"></script>
+<!-- JQVMap -->
+<script src="/adminlte3/plugins/jqvmap/jquery.vmap.min.js"></script>
+<script src="/adminlte3/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+<!-- jQuery Knob Chart -->
+<script src="/adminlte3/plugins/jquery-knob/jquery.knob.min.js"></script>
+<!-- daterangepicker -->
+<script src="/adminlte3/plugins/moment/moment.min.js"></script>
+<script src="/adminlte3/plugins/daterangepicker/daterangepicker.js"></script>
+<!-- Tempusdominus Bootstrap 4 -->
+<script src="/adminlte3/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<!-- Summernote -->
+<script src="/adminlte3/plugins/summernote/summernote-bs4.min.js"></script>
+<!-- overlayScrollbars -->
+<script src="/adminlte3/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+
+<!-- SweetAlert2 -->
+<script src="/adminlte3/plugins/sweetalert2/sweetalert2.min.js"></script>
+
+<script src="/adminlte3/dist/js/adminlte.js"></script>
+
+<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+<script src="/adminlte3/dist/js/pages/dashboard.js"></script>
+<!-- AdminLTE for demo purposes -->
+<script src="/adminlte3/dist/js/demo.js"></script>
+
+<!-- For Modals functions -->
+<script src="/js/modals.js"></script>
+
+<!-- For Downloads functions -->
+<script src="/js/downloads.js"></script>
+
+</body>
+</html>

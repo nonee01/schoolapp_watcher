@@ -1,12 +1,54 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
 
+from .extractors import (
+    build_documents,
+    parse_absence_summary,
+    parse_absences,
+    parse_courses,
+    parse_diploma,
+    parse_element_grades,
+    parse_mark_statistics,
+    parse_module_grades,
+    parse_profile,
+    parse_sanctions,
+    parse_semester_results,
+    parse_year_results,
+)
+from .models import (
+    Absence,
+    CourseEnrollment,
+    DiplomaResult,
+    Document,
+    ElementGrade,
+    MarkStatistics,
+    ModuleGrade,
+    Sanction,
+    SemesterResult,
+    StudentData,
+    StudentProfile,
+    YearResult,
+)
+
 SCHOOLAPP_BASE = "https://schoolapp.ensam-umi.ac.ma"
 LOGIN_PATH = "/login"
+INDEX_PATH = "/index"
+ELEMENTS_PATH = "/student/noteselem-encours"
+ELEMENTS_HISTORY_PATH = "/student/noteselem"
+MODULES_PATH = "/student/notesmod-encours"
+MODULES_HISTORY_PATH = "/student/notesmod"
+SEMESTERS_PATH = "/student/notessem"
+YEARS_PATH = "/student/notesannee"
+DIPLOMA_PATH = "/student/notesdiplome"
+ABSENCES_PATH = "/student/absence/bilan"
+SANCTIONS_PATH = "/student/absence/sanctions"
+COURSES_PATH = "/student/inscriptioncours"
+STATS_PATH = "/notes-stat/elemevalsat"
 
 
 def extract_csrf(html: str) -> str | None:
@@ -82,3 +124,126 @@ class SchoolAppClient:
             self._do_login()
             return self._request(method, path, params=params, data=data, _retried=True)
         return resp.text
+
+    # ── per-student resources (spec §5) ──────────────────────────────────
+
+    def profile(self) -> StudentProfile:
+        return parse_profile(self._get(INDEX_PATH))
+
+    def element_grades(self, history: bool = False) -> list[ElementGrade]:
+        return parse_element_grades(self._get(ELEMENTS_HISTORY_PATH if history else ELEMENTS_PATH))
+
+    def module_grades(self, history: bool = False) -> list[ModuleGrade]:
+        return parse_module_grades(self._get(MODULES_HISTORY_PATH if history else MODULES_PATH))
+
+    def semester_results(self) -> list[SemesterResult]:
+        return parse_semester_results(self._get(SEMESTERS_PATH))
+
+    def year_results(self) -> list[YearResult]:
+        return parse_year_results(self._get(YEARS_PATH))
+
+    def diploma(self) -> DiplomaResult:
+        return parse_diploma(self._get(DIPLOMA_PATH))
+
+    def absences(self) -> list[Absence]:
+        return parse_absences(self._get(ABSENCES_PATH))
+
+    def absence_summary(self) -> list[dict[str, str]]:
+        return parse_absence_summary(self._get(ABSENCES_PATH))
+
+    def sanctions(self) -> list[Sanction]:
+        return parse_sanctions(self._get(SANCTIONS_PATH))
+
+    def courses(self) -> list[CourseEnrollment]:
+        return parse_courses(self._get(COURSES_PATH))
+
+    _EVAL_ALIASES = {
+        "cc": "NoteCC", "notecc": "NoteCC",
+        "ex": "NoteEX", "noteex": "NoteEX",
+        "tp": "NoteTP", "notetp": "NoteTP",
+        "moy": "MoyElem", "moyelem": "MoyElem", "moyenne": "MoyElem",
+    }
+
+    def mark_statistics(self, code: str, eval_kind: str = "all") -> list[MarkStatistics]:
+        grades = parse_element_grades(self._get(ELEMENTS_PATH))
+        target = next((g for g in grades if g.code.upper() == code.upper()), None)
+        if target is None:
+            return []
+        notes = {"NoteCC": target.cc, "NoteEX": target.ex, "NoteTP": target.tp, "MoyElem": target.moy}
+        wanted = self._EVAL_ALIASES.get(eval_kind.strip().lower())
+        out: list[MarkStatistics] = []
+        for eval_param in ([wanted] if wanted else list(notes)):
+            note = notes[eval_param]
+            if not note or note == "--":
+                continue
+            html = self._get(STATS_PATH, eval=eval_param, codeelem=target.code.upper(),
+                             au=target.au, note=note)
+            stat = parse_mark_statistics(html, element=target.code.upper(),
+                                         eval_kind=eval_param, au=target.au, note=note)
+            if stat:
+                out.append(stat)
+        return out
+
+    def documents(self, year_results: list[YearResult] | None = None,
+                  semester_results: list[SemesterResult] | None = None) -> list[Document]:
+        yr = year_results if year_results is not None else self.year_results()
+        sr = semester_results if semester_results is not None else self.semester_results()
+        return build_documents(yr, sr)
+
+    # ── aggregate ────────────────────────────────────────────────────────
+
+    def fetch_all(self, include_history: bool = True, include_stats: bool = False) -> StudentData:
+        """Fetch every per-student resource; a failing resource lands in .errors, never aborts the rest."""
+        data = StudentData(fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+
+        def grab(name, fn, default):
+            try:
+                return fn()
+            except Exception as exc:  # noqa: BLE001 - per-resource isolation (spec §10)
+                data.errors[name] = str(exc)
+                return default
+
+        data.profile = grab("profile", self.profile, None)
+
+        current = grab("element_grades", self.element_grades, [])
+        history = (grab("element_grades_history", lambda: self.element_grades(history=True), [])
+                   if include_history else [])
+        seen = {(g.code, g.au) for g in current}
+        data.element_grades = current + [g for g in history if (g.code, g.au) not in seen]
+
+        mods = grab("module_grades", self.module_grades, [])
+        mods_hist = (grab("module_grades_history", lambda: self.module_grades(history=True), [])
+                     if include_history else [])
+        seen_mods = {(m.code, m.au) for m in mods}
+        data.module_grades = mods + [m for m in mods_hist if (m.code, m.au) not in seen_mods]
+
+        data.semester_results = grab("semester_results", self.semester_results, [])
+        data.year_results = grab("year_results", self.year_results, [])
+        data.diploma = grab("diploma", self.diploma, None)
+
+        absences_html = grab("absences", lambda: self._get(ABSENCES_PATH), None)
+        if absences_html is not None:
+            data.absences = parse_absences(absences_html)
+            data.absence_summary = parse_absence_summary(absences_html)
+
+        data.sanctions = grab("sanctions", self.sanctions, [])
+        data.courses = grab("courses", self.courses, [])
+        data.documents = grab(
+            "documents", lambda: build_documents(data.year_results, data.semester_results), [])
+
+        if include_stats:
+            data.stats = grab("stats", lambda: self._all_stats(current), [])
+        return data
+
+    def _all_stats(self, grades: list[ElementGrade]) -> list[MarkStatistics]:
+        out: list[MarkStatistics] = []
+        for g in grades:
+            if not g.moy or g.moy == "--":
+                continue
+            html = self._get(STATS_PATH, eval="MoyElem", codeelem=g.code.upper(),
+                             au=g.au, note=g.moy)
+            stat = parse_mark_statistics(html, element=g.code.upper(), eval_kind="MoyElem",
+                                         au=g.au, note=g.moy)
+            if stat:
+                out.append(stat)
+        return out
