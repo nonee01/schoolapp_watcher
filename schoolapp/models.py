@@ -140,6 +140,22 @@ class MarkStatistics:
 
 
 @dataclass
+class CatalogElement:
+    """Element row nested under a catalog module - carries the CC/EX/TP weights."""
+    code: str = ""
+    intitule: str = ""
+    vh_ctd: str = ""
+    vh_tp: str = ""
+    vh_eval: str = ""
+    coef_cc: str = ""
+    coef_ex: str = ""
+    coef_ecrit: str = ""
+    coef_tp: str = ""
+    coef_eelem: str = ""
+    raw: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class CatalogModule:
     code_mod: str = ""
     intitule: str = ""
@@ -151,6 +167,7 @@ class CatalogModule:
     seuil: str = ""
     eliminatoire: str = ""
     filiere: str = ""
+    elements: list[CatalogElement] = field(default_factory=list)
     raw: dict[str, str] = field(default_factory=dict)
 
 

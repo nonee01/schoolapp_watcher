@@ -204,5 +204,70 @@ def main() -> int:
     return 0
 
 
+def capture_catalog() -> int:
+    """--catalog-post: capture one full and one empty catalog POST response."""
+    env = load_env(ENV_FILE)
+    email, password = env.get("SCHOOLAPP_EMAIL", ""), env.get("SCHOOLAPP_PASSWORD", "")
+    if not email or not password:
+        print("Missing SCHOOLAPP_EMAIL/SCHOOLAPP_PASSWORD in .env")
+        return 2
+    client = SchoolAppClient(min_interval=0.5)
+    client.login(email, password)
+    print("login: OK")
+
+    form = client._get("/plan-etudes-view/modules")
+    soup = BeautifulSoup(form, "html.parser")
+    options = {s.get("name"): [o.get("value") for o in s.find_all("option") if o.get("value")]
+               for s in soup.find_all("select")}
+    csrf_input = soup.select_one('input[name="_csrf"]')
+    csrf = csrf_input.get("value", "") if csrf_input else ""
+    print("options:", {k: len(v) for k, v in options.items()}, "csrf:", bool(csrf))
+
+    def modules_rows(html: str) -> int:
+        s2 = BeautifulSoup(html, "html.parser")
+        for t in s2.find_all("table"):
+            ths = {" ".join(th.get_text(" ", strip=True).split()) for th in t.find_all("th")}
+            if {"CodeMod", "Intitule"} <= ths:
+                return len([tr for tr in t.find_all("tr") if tr.find_all("td")])
+        return -1
+
+    def post_combo(n: str, f: str, s: str) -> str:
+        return client._post("/plan-etudes-view/modules",
+                            {"niveau": n, "filiere": f, "semestre": s, "_csrf": csrf})
+
+    niveaux, filieres, semestres = options["niveau"], options["filiere"], options["semestre"]
+    full_html = empty_html = None
+    for n, f, s in (("2A", "API-MPT", "S1"), ("2A", "API-MPT", "S2"),
+                    (niveaux[0], filieres[0], semestres[0])):
+        html = post_combo(n, f, s)
+        rows = modules_rows(html)
+        print(f"probe full  ({n}, {f}, {s}) rows={rows}")
+        if rows > 0:
+            full_html = html
+            break
+    html = post_combo("1A", "GC24", "S1")
+    rows = modules_rows(html)
+    print(f"probe empty (1A, GC24, S1) rows={rows}")
+    if rows <= 1:
+        empty_html = html
+        s2 = BeautifulSoup(html, "html.parser")
+        for t in s2.find_all("table"):
+            for tr in t.find_all("tr"):
+                tds = [" ".join(td.get_text(" ", strip=True).split()) for td in tr.find_all("td")]
+                if tds:
+                    print("empty-state row cells:", tds)
+
+    exact = build_exact([], email)
+    wrote = 0
+    for name, text in (("catalog_modules_full", full_html), ("catalog_modules_empty", empty_html)):
+        if text is None:
+            print(f"{name}: NOT captured")
+            continue
+        (FIXTURES / f"{name}.html").write_text(sanitize(text, exact), encoding="utf-8")
+        wrote += 1
+    print(f"wrote {wrote} catalog fixtures")
+    return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(capture_catalog() if "--catalog-post" in sys.argv else main())

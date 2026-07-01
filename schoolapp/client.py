@@ -10,9 +10,12 @@ from .extractors import (
     build_documents,
     parse_absence_summary,
     parse_absences,
+    parse_catalog_modules,
+    parse_catalog_options,
     parse_courses,
     parse_diploma,
     parse_element_grades,
+    parse_filieres,
     parse_mark_statistics,
     parse_module_grades,
     parse_profile,
@@ -22,10 +25,12 @@ from .extractors import (
 )
 from .models import (
     Absence,
+    CatalogModule,
     CourseEnrollment,
     DiplomaResult,
     Document,
     ElementGrade,
+    Filiere,
     MarkStatistics,
     ModuleGrade,
     Sanction,
@@ -49,6 +54,8 @@ ABSENCES_PATH = "/student/absence/bilan"
 SANCTIONS_PATH = "/student/absence/sanctions"
 COURSES_PATH = "/student/inscriptioncours"
 STATS_PATH = "/notes-stat/elemevalsat"
+CATALOG_PATH = "/plan-etudes-view/modules"
+FILIERES_PATH = "/plan-etudes-view/filieres"
 
 
 def extract_csrf(html: str) -> str | None:
@@ -189,6 +196,22 @@ class SchoolAppClient:
         yr = year_results if year_results is not None else self.year_results()
         sr = semester_results if semester_results is not None else self.semester_results()
         return build_documents(yr, sr)
+
+    # ── institution-wide catalog (spec §11) ─────────────────────────────
+
+    def catalog_options(self) -> dict:
+        return parse_catalog_options(self._get(CATALOG_PATH))
+
+    def catalog_modules(self, niveau: str, filiere: str, semestre: str,
+                        csrf: str | None = None) -> list[CatalogModule]:
+        if csrf is None:
+            csrf = self.catalog_options()["csrf"]
+        html = self._post(CATALOG_PATH, {"niveau": niveau, "filiere": filiere,
+                                         "semestre": semestre, "_csrf": csrf})
+        return parse_catalog_modules(html, filiere=filiere)
+
+    def filieres(self) -> list[Filiere]:
+        return parse_filieres(self._get(FILIERES_PATH))
 
     # ── aggregate ────────────────────────────────────────────────────────
 
