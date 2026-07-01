@@ -338,13 +338,17 @@ Change history (`changes.jsonl`) gains one entry per detected change, typed by r
 the cached `catalog/modules.json`, letting the calculator/validation use authoritative module
 coefficients and thresholds for **any** filière — not just the hard-coded set.
 
-**Scope boundary (important):** the catalog module endpoint exposes module-level data only. It does
-**not** expose element-level CC/EX/TP weights or an element's weight within its module; those stay
-sourced from `presets.py` (currently the 2A set). So v1 delivers institution-wide *module* metadata and
-module-level validation, while *element-level estimation* (`_compute_moy`) remains limited to filières
-that have element presets. On crawl, catalog `coef_mod`/`seuil` are reconciled against `presets.py` and
-any mismatch is logged. Deriving element weights (needs a source the catalog doesn't expose) stays out
-of scope.
+**Scope boundary — OVERTURNED by capture (2026-07-01):** this section originally excluded
+element-level weights on the belief that the catalog endpoint exposes module-level data only. The
+captured POST response proves otherwise: each module row carries a **nested element table**
+(`CodeElem Intitule VHCTD VHTP VHEVAL CoefCC CoefEX CoefEcrit CoefTP CoefEelem`) — exactly the
+`ElementDef` weight set. `parse_catalog_modules` therefore extracts `CatalogModule.elements`, and
+`catalog_presets.to_module_def`/`module_defs` emit **full `ModuleDef`s including `ElementDef`
+lists** for any filière. Element-level estimation is no longer limited to hard-coded presets.
+Note: the server maps the posted year-relative `semestre` (S1/S2) to the absolute one in the
+response (2A+S1 → S3); `module_defs` filters on the absolute value. On crawl, catalog
+`coef_mod`/`seuil`/`eliminatoire` are still reconciled against `presets.py` (`reconcile()`) and
+mismatches logged; `presets.py` remains the fallback.
 
 `presets.py` itself is **kept as-is** (not deleted or rewritten); the catalog-derived defs sit
 alongside it and the calculator prefers catalog values where available, falling back to presets.
@@ -386,8 +390,8 @@ Each phase is independently shippable and leaves the suite green.
 
 ## 14. Out of scope (v1)
 
-- Deriving **element-level** CC/EX/TP weights from the catalog (module-level metadata *is* derived in
-  v1 — see §11.1; element weights need a source the catalog doesn't expose).
+- ~~Deriving **element-level** CC/EX/TP weights from the catalog~~ — *in scope since 2026-07-01:
+  the captured catalog POST response exposes nested element tables with the full weight set (§11.1).*
 - Submitting choix-filière / mobilité forms (read status only).
 - Migrating existing API endpoints off `s4_snapshot.json` (they keep working as-is).
 - Changes to the Kotlin Android app's on-device scraper.
