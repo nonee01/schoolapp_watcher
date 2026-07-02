@@ -168,7 +168,7 @@ PRESET_2A_S4: list[ModuleDef] = [
         eliminatoire=7.0,
         elements=[
             ElementDef("API451", "Méthodes numériques", 0.0, 1.0, 1.0, 0.75, 1.75),
-            ElementDef("API452", "Programmation Avancée", 0.0, 1.0, 1.75, 0.0, 1.75),
+            ElementDef("API452", "Programmation Avancée", 0.3, 0.7, 1.0, 0.0, 1.0),
         ],
     ),
     ModuleDef(

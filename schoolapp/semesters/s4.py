@@ -146,12 +146,13 @@ def calc_cmd(
 @app.command("watch")
 def watch_cmd(
     ctx: typer.Context,
-    interval: int = typer.Option(900, min=30, help="Polling interval in seconds"),
+    interval: int = typer.Option(300, min=30, help="Polling interval in seconds (slows to 30 min between 04:00-06:00)"),
     timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
     email: str | None = typer.Option(None, help="SchoolApp email"),
     password: str | None = typer.Option(None, help="SchoolApp password"),
     state_file: str | None = typer.Option(None, help="Snapshot file path"),
     notify_email: bool = typer.Option(False, help="Send email on detected changes"),
+    notify_telegram: bool = typer.Option(False, help="Send Telegram message on detected changes"),
     once: bool = typer.Option(False, help="Run one check and exit"),
 ) -> None:
     """Watch S4 marks for changes."""
@@ -175,6 +176,7 @@ def watch_cmd(
             semester="S4",
             state_file=state_file,
             notify_email=notify_email,
+            notify_telegram=notify_telegram,
             config=app_ctx.config,
         )
         raise typer.Exit(code=code)
@@ -187,6 +189,7 @@ def watch_cmd(
         state_file=state_file,
         interval=interval,
         notify_email=notify_email,
+        notify_telegram=notify_telegram,
         config=app_ctx.config,
     )
     raise typer.Exit(code=code)

@@ -138,6 +138,28 @@ def _load_env_file(path: Path) -> None:
         os.environ[key] = value
 
 
+def _create_env_from_example_in_dir(base_dir: Path) -> bool:
+    """If `.env` is missing and `.env.example` exists, copy the example.
+
+    Returns True if a file was created, False otherwise.
+    """
+    try:
+        env = base_dir / ".env"
+        example = base_dir / ".env.example"
+        if env.exists() or not example.exists():
+            return False
+        env.write_bytes(example.read_bytes())
+        try:
+            env.chmod(0o600)
+        except Exception:
+            pass
+        logger.info("Created %s from %s", env, example)
+        return True
+    except Exception:
+        logger.warning("Failed to create .env from .env.example in %s", base_dir)
+        return False
+
+
 def _infer_project_root_from_venv() -> Path | None:
     """Try to infer the project root when running from a venv.
 
@@ -1092,14 +1114,23 @@ def main(argv: list[str] | None = None) -> int:
     if pre_args.env_file:
         _load_env_file(Path(pre_args.env_file))
     else:
-        # Convenience: auto-load from current working directory.
+        # Convenience: auto-create .env from .env.example (if present), then
+        # auto-load from current working directory.
+        try:
+            _create_env_from_example_in_dir(Path("."))
+        except Exception:
+            pass
         _load_env_file(Path(".env"))
         _load_env_file(Path(".env.example"))
 
-        # Also auto-load from the project root (useful when running `schoolapp`
-        # from anywhere, because the venv lives under the project folder).
+        # Also auto-create/load from the project root (useful when running
+        # `schoolapp` from anywhere, because the venv lives under the project folder).
         project_root = _infer_project_root_from_venv()
         if project_root is not None:
+            try:
+                _create_env_from_example_in_dir(project_root)
+            except Exception:
+                pass
             _load_env_file(project_root / ".env")
             _load_env_file(project_root / ".env.example")
 

@@ -6,7 +6,7 @@ import ssl
 from email.message import EmailMessage
 
 
-def send_email(subject: str, body: str, *, config: dict | None = None) -> None:
+def send_email(subject: str, body: str, *, config: dict | None = None, html: str | None = None) -> None:
     cfg = config or {}
     smtp_cfg = cfg.get("smtp", {}) if isinstance(cfg, dict) else {}
 
@@ -24,7 +24,8 @@ def send_email(subject: str, body: str, *, config: dict | None = None) -> None:
     msg["Subject"] = subject
     msg["From"] = from_addr
     msg["To"] = to_addr
-    msg.set_content(body)
+    msg.set_content("This email requires an HTML-capable viewer.")
+    msg.add_alternative(body if html is None else html, subtype="html")
 
     context = ssl.create_default_context()
     if port == 465:
