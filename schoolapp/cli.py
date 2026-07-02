@@ -37,21 +37,7 @@ app.add_typer(s4_app, name="s4", help="Semester S4 namespace")
 catalog_app = typer.Typer(no_args_is_help=True, help="Institution-wide curriculum catalog")
 app.add_typer(catalog_app, name="catalog")
 
-# StudentData attribute -> store resource name (spec §7 layout)
-RESOURCE_FILES = {
-    "profile": "student/profile",
-    "element_grades": "student/elements",
-    "module_grades": "student/modules",
-    "semester_results": "student/semesters",
-    "year_results": "student/years",
-    "diploma": "student/diploma",
-    "absences": "student/absences",
-    "absence_summary": "student/absence_summary",
-    "sanctions": "student/sanctions",
-    "courses": "student/courses",
-    "stats": "student/stats",
-    "documents": "student/documents",
-}
+RESOURCE_FILES = store.RESOURCE_FILES
 
 
 def _library_client(ctx: typer.Context, email: str | None, password: str | None,
@@ -196,9 +182,7 @@ def fetch_all_cmd(
     data = client.fetch_all(include_history=history, include_stats=stats)
 
     if save:
-        store.save_resource("student/all", data, source="fetch_all")
-        for attr, name in RESOURCE_FILES.items():
-            store.save_resource(name, getattr(data, attr), source="fetch_all")
+        store.save_student_data(data, source="fetch_all")
 
     table = Table(title="fetch-all", header_style="bold magenta")
     table.add_column("Resource")
