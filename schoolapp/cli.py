@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -22,7 +24,7 @@ from .semesters.s4 import app as s4_app
 from .utils import AppContext, banner, load_config, load_env_file, log
 from .utils import resolve_credentials
 from .utils import set_log_level
-from .watcher import run_health_check
+from .watcher import _append_history, _history_path, run_health_check
 
 app = typer.Typer(
     name="schoolapp",
@@ -252,6 +254,7 @@ def catalog_crawl(
 
     client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
     merged = {(m.code_mod, m.niveau, m.semestre, m.filiere): m for m in load_catalog_modules()}
+    initial = {k: asdict(m) for k, m in merged.items()}
     progress = {"combos": 0, "errors": 0}
 
     def on_combo(n, f, s, fresh, err):
@@ -275,6 +278,19 @@ def catalog_crawl(
                            list(PRESET_2A_S3) + list(PRESET_2A_S4))
     for msg in mismatches:
         log("WARNING", f"catalog≠presets: {msg}")
+
+    # One change summary per crawl (spec §9): the catalog never alerts per cell.
+    added = [k for k in merged if k not in initial]
+    modified = [k for k in merged if k in initial and asdict(merged[k]) != initial[k]]
+    if added or modified:
+        sample = ", ".join(sorted({k[0] for k in added + modified})[:10])
+        summary = f"Catalogue: +{len(added)} module(s), ~{len(modified)} modifié(s) ({sample})"
+        console.print(f"[bold]{summary}[/bold]")
+        _append_history(_history_path("catalog", None), {
+            "ts": datetime.now().isoformat(timespec="seconds"),
+            "type": "catalog",
+            "summary": summary,
+        })
 
     console.print(
         f"Crawl done: {progress['combos']} combos, {len(merged)} modules, "

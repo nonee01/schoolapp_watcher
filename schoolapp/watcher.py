@@ -989,6 +989,100 @@ def _tg_semester_section(new_sems: dict, old_sems: dict | None) -> str | None:
     return "\n".join(lines) if lines else None
 
 
+# ── Phase 6: generic change detection for the remaining per-student resources ──
+# Rich cards stay for grades/absences/modules/semesters; profile, years, diploma,
+# courses and past-year grade rows get concise keyed added/changed/removed lines.
+# Baseline = the previous store envelope; no envelope -> no baseline -> silent.
+
+def _keyed_diff_lines(old_items: list[dict], new_items: list[dict],
+                      key_fields: tuple[str, ...], fields: tuple[str, ...]) -> list[str]:
+    def keyed(items: list[dict]) -> dict[str, dict]:
+        return {" ".join(str(d.get(f, "")) for f in key_fields).strip(): d for d in items}
+
+    old_map, new_map = keyed(old_items), keyed(new_items)
+    lines: list[str] = []
+    for k, d in new_map.items():
+        o = old_map.get(k)
+        if o is None:
+            shown = ", ".join(f"{f}={d.get(f)}" for f in fields if d.get(f))
+            lines.append(f"+ {k}" + (f" ({shown})" if shown else ""))
+        else:
+            diffs = [f"{f}: {o.get(f) or '--'} -> {d.get(f) or '--'}"
+                     for f in fields if (o.get(f) or "") != (d.get(f) or "")]
+            if diffs:
+                lines.append(f"{k} - " + ", ".join(diffs))
+    lines.extend(f"− {k} (retiré)" for k in old_map if k not in new_map)
+    return lines
+
+
+def _history_only(items: list[dict]) -> list[dict]:
+    """Past-year grade rows: the current (encours) pages use a `Dec` column, the
+    history pages `Decision` - rows without `Dec` are history-only."""
+    return [d for d in items if "Dec" not in (d.get("raw") or {})]
+
+
+# (errors/attr key, store envelope, changes.jsonl type, digest title, key fields, shown fields, history-only)
+_GENERIC_RESOURCES = [
+    ("year_results", "student/years", "years", "Résultats d'année",
+     ("niveau", "au"), ("moy_annee", "decision", "classement", "statut"), False),
+    ("courses", "student/courses", "courses", "Inscriptions aux cours",
+     ("code_elem", "num"), ("statut", "section", "groupe", "sous_groupe"), False),
+    ("element_grades", "student/elements", "elements_history", "Notes des années passées (éléments)",
+     ("code", "au"), ("cc", "ex", "tp", "moy", "decision"), True),
+    ("module_grades", "student/modules", "modules_history", "Résultats modules (années passées)",
+     ("code", "au"), ("moy", "decision"), True),
+]
+
+
+def _generic_resource_diffs(data) -> list[tuple[str, str, list[str]]]:
+    """[(changes.jsonl type, digest title, lines)] - must run before save_student_data."""
+    from dataclasses import asdict
+
+    out: list[tuple[str, str, list[str]]] = []
+
+    if data.profile is not None and "profile" not in data.errors:
+        env = store.load_resource("student/profile")
+        if env and isinstance(env.get("data"), dict):
+            old_raw = env["data"].get("raw") or {}
+            lines: list[str] = []
+            for k, v in data.profile.raw.items():
+                ov = old_raw.get(k)
+                if ov is None:
+                    if v:
+                        lines.append(f"+ {k}: {v}")
+                elif ov != v:
+                    lines.append(f"{k}: {ov or '--'} -> {v or '--'}")
+            lines.extend(f"− {k}" for k in old_raw if k not in data.profile.raw)
+            if lines:
+                out.append(("profile", "Profil étudiant", lines))
+
+    if data.diploma is not None and "diploma" not in data.errors:
+        env = store.load_resource("student/diploma")
+        if env and isinstance(env.get("data"), dict):
+            old_rows = env["data"].get("rows") or []
+            new_rows = [dict(r) for r in data.diploma.rows]
+            if old_rows != new_rows:
+                if not old_rows and new_rows:
+                    lines = [f"+ Notes de diplôme publiées ({len(new_rows)} ligne(s))"]
+                else:
+                    lines = [f"Notes de diplôme modifiées ({len(old_rows)} -> {len(new_rows)} ligne(s))"]
+                out.append(("diploma", "Diplôme", lines))
+
+    for attr, res_name, kind, title, key_fields, fields, hist in _GENERIC_RESOURCES:
+        if attr in data.errors:
+            continue
+        env = store.load_resource(res_name)
+        if not env or not isinstance(env.get("data"), list):
+            continue
+        old_items, new_items = env["data"], [asdict(x) for x in getattr(data, attr)]
+        if hist:
+            old_items, new_items = _history_only(old_items), _history_only(new_items)
+        lines = _keyed_diff_lines(old_items, new_items, key_fields, fields)
+        if lines:
+            out.append((kind, title, lines))
+    return out
+
+
 def check_once(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, notify_email: bool, config: dict | None, notify_telegram: bool = False, session: requests.Session | None = None) -> int:
     if session is None:
         session = requests.Session()
@@ -1041,6 +1135,7 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
     mod_cards, mod_subj = _diff_module_cards(extras_old.get("modules"), extras_new.get("modules") or {}, mod_titles)
     sem_cards, sem_subj = _diff_semester_cards(extras_old.get("semesters"), extras_new.get("semesters") or {})
     extra_cards = abs_cards + mod_cards + sem_cards
+    generic_changes = _generic_resource_diffs(data)
 
     snap = Snapshot(headers=headers, rows=rows, fingerprint=_fingerprint(headers, rows), extras=extras_new)
     _save_snapshot(path, snap)
@@ -1052,7 +1147,7 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
     except Exception as exc:  # noqa: BLE001
         log("WARNING", f"Could not persist resource store: {exc}")
 
-    changed = grades_changed or bool(extra_cards)
+    changed = grades_changed or bool(extra_cards) or bool(generic_changes)
 
     if changed:
         if grades_changed:
@@ -1064,6 +1159,8 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
             log("SUCCESS", f"Official module result update detected ({len(mod_cards)} item(s))")
         if sem_cards:
             log("SUCCESS", f"Semester result update detected ({len(sem_cards)} item(s))")
+        for _gkind, _gtitle, _glines in generic_changes:
+            log("SUCCESS", f"{_gtitle}: {len(_glines)} change(s)")
 
         if notify_email:
             sections: list[str] = []
@@ -1077,6 +1174,9 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
                     sections.append("\n".join(cards))
                     if subj:
                         subjects.append(subj)
+            for _gkind, _gtitle, _glines in generic_changes:
+                sections.append(_simple_card("#6366f1", "SchoolApp", _gtitle, "<br>".join(_glines)))
+                subjects.append(f"{_gtitle} - {len(_glines)} changement(s)")
             subject = subjects[0] if subjects else f"SchoolApp {semester} - mise à jour"
             if len(subjects) > 1:
                 subject += f" (+{len(subjects) - 1})"
@@ -1114,6 +1214,8 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
                 s = _tg_semester_section(extras_new.get("semesters") or {}, extras_old.get("semesters"))
                 if s:
                     tg_parts.append(s)
+            for _gkind, _gtitle, _glines in generic_changes:
+                tg_parts.append(f"📄 <b>{_gtitle}</b>\n" + "\n".join(_glines))
             if tg_parts:
                 try:
                     from .telegram_notifier import send_telegram
@@ -1142,6 +1244,13 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
                     "semester": semester,
                     "summary": _hsubj or f"{_htype.title()} update",
                 })
+        for _gkind, _gtitle, _glines in generic_changes:
+            _append_history(hist_path, {
+                "ts": datetime.now().isoformat(timespec="seconds"),
+                "type": _gkind,
+                "semester": semester,
+                "summary": f"{_gtitle} - {len(_glines)} changement(s)",
+            })
     else:
         log("INFO", f"No change detected for {semester}")
 
