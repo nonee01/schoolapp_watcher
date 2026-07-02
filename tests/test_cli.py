@@ -1,12 +1,31 @@
+import json
+
 from typer.testing import CliRunner
 
-from schoolapp import cli, store
+from schoolapp import cli, store, watcher
 from schoolapp.cli import app
 from schoolapp.extractors.catalog import parse_catalog_modules
 from schoolapp.extractors.catalog_presets import CATALOG_RESOURCE
 from schoolapp.models import Document, StudentData, StudentProfile
+from tests.test_fetch_all import FakeSession
 
 runner = CliRunner()
+
+
+def _seed_store(tmp_path, monkeypatch):
+    """Populate the store exactly as production does - one check_once over fixtures."""
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    watcher.check_once(
+        email="student@example.test", password="hunter2", timeout=5,
+        semester="S4", state_file=None, notify_email=False, config=None,
+        session=FakeSession(),
+    )
+
+
+def test_version_flag_works():
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "schoolapp" in result.output
 
 
 def test_cli_help_lists_library_commands():
@@ -59,6 +78,39 @@ def test_serve_wires_waitress_with_host_and_port(tmp_path, monkeypatch):
     assert called == {"host": "127.0.0.1", "port": 9999, "threads": 2}
 
 
+def test_show_grades_human_and_json(tmp_path, monkeypatch):
+    _seed_store(tmp_path, monkeypatch)
+
+    human = runner.invoke(app, ["show", "grades"])
+    assert human.exit_code == 0
+    assert "Element grades" in human.output and "API311" in human.output
+
+    # -q suppresses the stderr chrome, so stdout is pure JSON
+    result = runner.invoke(app, ["-q", "show", "grades", "--json"])
+    assert result.exit_code == 0
+    elements = json.loads(result.output)
+    assert len(elements) == 24 and elements[0]["code"] == "API311"  # latest AU only
+
+    full = json.loads(runner.invoke(app, ["-q", "show", "grades", "--history", "--json"]).output)
+    assert len(full) == 46
+
+
+def test_show_absences_and_modules(tmp_path, monkeypatch):
+    _seed_store(tmp_path, monkeypatch)
+    absences = runner.invoke(app, ["show", "absences"])
+    assert absences.exit_code == 0 and "Absences" in absences.output
+    mods = json.loads(runner.invoke(app, ["-q", "show", "grades", "--modules", "--json"]).output)
+    assert mods and all("code" in m for m in mods)
+
+
+def test_show_empty_store_hint_and_json_null(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    human = runner.invoke(app, ["show", "profile"])
+    assert human.exit_code == 0 and "No cached profile" in human.output
+    result = runner.invoke(app, ["-q", "show", "profile", "--json"])
+    assert json.loads(result.output) is None
+
+
 class _FakeClient:
     def fetch_all(self, include_history=True, include_stats=False):
         return StudentData(
@@ -68,8 +120,39 @@ class _FakeClient:
             fetched_at="2026-07-02T00:00:00+00:00",
         )
 
+    def documents(self):
+        return [Document(kind="attestation-scolarite", url="/x", filename="attestation.pdf"),
+                Document(kind="releve-annee", url="/y", filename="releve.pdf")]
+
     def download(self, doc):
+        if doc.filename == "releve.pdf":
+            raise RuntimeError("boom")
         return b"%PDF-1.4 fake"
+
+
+def test_documents_download_caches_and_isolates_failures(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: _FakeClient())
+    out_dir = tmp_path / "pdfs"
+    result = runner.invoke(app, ["-q", "documents", "download", "--all",
+                                 "--out", str(out_dir), "--json"])
+    assert result.exit_code == 0
+    manifest = json.loads(result.output)
+    ok = next(m for m in manifest if m["filename"] == "attestation.pdf")
+    bad = next(m for m in manifest if m["filename"] == "releve.pdf")
+    assert ok["bytes"] == len(b"%PDF-1.4 fake") and "error" not in ok
+    assert "boom" in bad["error"]  # one failure doesn't abort the other
+    assert store.document_path("attestation.pdf").exists()
+    assert (out_dir / "attestation.pdf").read_bytes().startswith(b"%PDF")
+
+
+def test_documents_download_lists_choices_when_no_selection(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: _FakeClient())
+    result = runner.invoke(app, ["-q", "documents", "download", "--json"])
+    choices = json.loads(result.output)
+    assert {c["kind"] for c in choices} == {"attestation-scolarite", "releve-annee"}
+    assert not store.document_path("attestation.pdf").exists()  # nothing downloaded
 
 
 def test_export_matches_store_layout(tmp_path, monkeypatch):
