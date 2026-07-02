@@ -55,6 +55,30 @@ def load_resource(name: str, directory: Path | None = None) -> dict | None:
     return envelope if isinstance(envelope, dict) and "data" in envelope else None
 
 
+# StudentData attribute -> per-resource envelope name (shared by CLI + watcher + API).
+RESOURCE_FILES = {
+    "profile": "student/profile",
+    "element_grades": "student/elements",
+    "module_grades": "student/modules",
+    "semester_results": "student/semesters",
+    "year_results": "student/years",
+    "diploma": "student/diploma",
+    "absences": "student/absences",
+    "absence_summary": "student/absence_summary",
+    "sanctions": "student/sanctions",
+    "courses": "student/courses",
+    "stats": "student/stats",
+    "documents": "student/documents",
+}
+
+
+def save_student_data(data, *, source: str = "fetch_all", directory: Path | None = None) -> None:
+    """Persist a StudentData bundle: student/all plus one envelope per resource."""
+    save_resource("student/all", data, source=source, directory=directory)
+    for attr, name in RESOURCE_FILES.items():
+        save_resource(name, getattr(data, attr), source=source, directory=directory)
+
+
 def freshness(names: list[str], directory: Path | None = None) -> dict[str, str | None]:
     """{resource name: fetched_at | None} - feeds /api/status `resources` (spec §8.1)."""
     out: dict[str, str | None] = {}

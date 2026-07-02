@@ -84,6 +84,10 @@ class SchoolAppClient:
         self._email: str | None = None
         self._password: str | None = None
         self._last_request = 0.0
+        # Raw HTML of the last successful response per path - lets cache-layer
+        # consumers (the watcher) reuse the exact bytes fetch_all parsed instead
+        # of re-fetching. Bounded: one entry per distinct path.
+        self.last_pages: dict[str, str] = {}
 
     def _throttle(self) -> None:
         if self.min_interval > 0:
@@ -95,6 +99,11 @@ class SchoolAppClient:
     def login(self, email: str, password: str) -> None:
         self._email, self._password = email, password
         self._do_login()
+
+    def set_credentials(self, email: str, password: str) -> None:
+        """Store credentials without logging in now; auth happens lazily when a
+        request lands on the login page (a still-valid session costs nothing)."""
+        self._email, self._password = email, password
 
     def _do_login(self) -> None:
         self._throttle()
@@ -109,6 +118,11 @@ class SchoolAppClient:
         page.raise_for_status()
         if looks_like_login_page(page.text):
             raise RuntimeError("Login failed: verify email/password")
+
+    def get_page(self, path: str) -> str:
+        """Raw HTML of a portal page (re-auth handled) - for cache-layer consumers
+        that need the exact bytes (the watcher's legacy snapshot format)."""
+        return self._get(path)
 
     def _get(self, path: str, **params: str) -> str:
         return self._request("GET", path, params=params)
@@ -130,6 +144,7 @@ class SchoolAppClient:
                 raise RuntimeError("Session expired and re-authentication failed")
             self._do_login()
             return self._request(method, path, params=params, data=data, _retried=True)
+        self.last_pages[path] = resp.text
         return resp.text
 
     # ── per-student resources (spec §5) ──────────────────────────────────

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import random
@@ -10,23 +9,32 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from bs4 import BeautifulSoup
 from rich.panel import Panel
 from rich.table import Table
 
+from . import store
+from .client import (
+    ELEMENTS_PATH,
+    LOGIN_PATH,
+    MODULES_PATH,
+    SCHOOLAPP_BASE,
+    SchoolAppClient,
+    extract_csrf as _extract_csrf,
+    looks_like_login_page as _looks_like_login_page,
+)
 from .emailer import send_email
+from .extractors import parse_element_grades, parse_module_grades
+from .extractors._tables import (
+    extract_table as _extract_table,
+    fingerprint as _fingerprint,
+    normalize_cell as _normalize_cell,
+)
+from .models import Absence, ModuleGrade, Sanction, SemesterResult
 from .presets import modules_for_semester
 from .calculator import _to_float, _calc_element_grade, _calc_element_rattrapage
 from .utils import console, log
 
-SCHOOLAPP_BASE = "https://schoolapp.ensam-umi.ac.ma"
-LOGIN_PATH = "/login"
-MARKS_PATH = "/student/noteselem-encours"
-STATS_PATH = "/notes-stat/elemevalsat"
-ABSENCE_PATH = "/student/absence/bilan"
-SANCTIONS_PATH = "/student/absence/sanctions"
-MODS_PATH = "/student/notesmod-encours"
-SEM_PATH = "/student/notessem"
+MARKS_PATH = ELEMENTS_PATH  # legacy name, kept for external callers
 
 
 @dataclass
@@ -35,50 +43,6 @@ class Snapshot:
     rows: list[list[str]]
     fingerprint: str
     extras: dict | None = None
-
-
-def _normalize_cell(text: str) -> str:
-    return " ".join(text.split())
-
-
-def _extract_csrf(html: str) -> str | None:
-    soup = BeautifulSoup(html, "html.parser")
-    token = soup.select_one('input[name="_csrf"]')
-    if not token:
-        return None
-    value = token.get("value")
-    return value if isinstance(value, str) and value else None
-
-
-def _looks_like_login_page(html: str) -> bool:
-    soup = BeautifulSoup(html, "html.parser")
-    return bool(soup.select_one('form[action="/login"]') and soup.select_one('input[name="password"]'))
-
-
-def _extract_table(html: str) -> tuple[list[str], list[list[str]]]:
-    soup = BeautifulSoup(html, "html.parser")
-    tables = soup.find_all("table")
-    if not tables:
-        raise RuntimeError("No table found on marks page")
-
-    best = max(tables, key=lambda t: len(t.find_all("tr")))
-    headers = [_normalize_cell(th.get_text(" ", strip=True)) for th in best.find_all("th")]
-
-    rows: list[list[str]] = []
-    for tr in best.find_all("tr"):
-        tds = tr.find_all("td")
-        if not tds:
-            continue
-        row = [_normalize_cell(td.get_text(" ", strip=True)) for td in tds]
-        if any(row):
-            rows.append(row)
-
-    return headers, rows
-
-
-def _fingerprint(headers: list[str], rows: list[list[str]]) -> str:
-    payload = json.dumps({"headers": headers, "rows": rows}, ensure_ascii=False, sort_keys=True)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 _STATE_FIELDS = ("CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy", "Dec")
@@ -549,122 +513,48 @@ def _html_wrap(semester: str, cards_html: str, heading: str = "Nouvelles notes d
 # ---------- Extra watchers: absences, sanctions, official module & semester results ----------
 
 
-def _table_by_headers(html: str, wanted: set[str]) -> tuple[list[str], list[list[str]]] | None:
-    """Find the first table whose header row contains all `wanted` columns."""
-    soup = BeautifulSoup(html, "html.parser")
-    for t in soup.find_all("table"):
-        headers = [_normalize_cell(th.get_text(" ", strip=True)) for th in t.find_all("th")]
-        if wanted.issubset(set(headers)):
-            rows = []
-            for tr in t.find_all("tr"):
-                tds = [_normalize_cell(td.get_text(" ", strip=True)) for td in tr.find_all("td")]
-                if tds and any(tds):
-                    rows.append(tds)
-            return headers, rows
-    return None
+# ── legacy extras blob adapters ──────────────────────────────────────────
+# The snapshot's extras dict is a frozen cache format (api.py + old snapshots on
+# disk read it); these rebuild it byte-for-byte from the library's typed models.
+# tests/test_watcher_wiring.py pins parity against the original parsing algorithm.
 
-
-def _parse_absence_log(html: str) -> dict[str, dict[str, str]]:
-    found = _table_by_headers(html, {"Element", "Date", "Seance"})
-    if not found:
-        return {}
-    headers, rows = found
-    idx = {h: i for i, h in enumerate(headers)}
-    out: dict[str, dict[str, str]] = {}
-    for r in rows:
-        def cell(k: str) -> str:
-            i = idx.get(k)
-            return r[i] if i is not None and i < len(r) else ""
-        date = cell("Date").split(" ")[0]
-        elem = cell("Element")
-        if not elem:
-            continue
-        out[f"{elem}|{date}|{cell('Seance')}"] = {
-            "element": elem,
-            "date": date,
-            "seance": cell("Seance"),
-            "justif": cell("Justif").lower(),
-            "remarks": cell("Remarques"),
+def _absences_blob(items: list[Absence]) -> dict[str, dict[str, str]]:
+    return {
+        f"{a.element}|{a.date}|{a.seance}": {
+            "element": a.element,
+            "date": a.date,
+            "seance": a.seance,
+            "justif": a.raw.get("Justif", "").lower(),
+            "remarks": a.remarks,
         }
-    return out
-
-
-def _parse_sanctions(html: str) -> dict[str, str]:
-    soup = BeautifulSoup(html, "html.parser")
-    for t in soup.find_all("table"):
-        out: dict[str, str] = {}
-        for tr in t.find_all("tr"):
-            tds = [_normalize_cell(td.get_text(" ", strip=True)) for td in tr.find_all("td")]
-            if len(tds) >= 2 and tds[0]:
-                out[tds[0]] = tds[1]
-        if out:
-            return out
-    return {}
-
-
-def _parse_modules_encours(html: str) -> dict[str, dict[str, str]]:
-    found = _table_by_headers(html, {"CodeMod", "Moy", "Dec"})
-    if not found:
-        return {}
-    headers, rows = found
-    idx = {h: i for i, h in enumerate(headers)}
-    out: dict[str, dict[str, str]] = {}
-    for r in rows:
-        def cell(k: str) -> str:
-            i = idx.get(k)
-            return r[i] if i is not None and i < len(r) else ""
-        code = cell("CodeMod")
-        if not code:
-            continue
-        out[f"{code}|{cell('AU')}"] = {"code": code, "au": cell("AU"), "moy": cell("Moy"), "dec": cell("Dec")}
-    return out
-
-
-def _parse_semester_results(html: str) -> dict[str, dict[str, str]]:
-    found = _table_by_headers(html, {"Semestre", "Moy SEM"})
-    if not found:
-        return {}
-    headers, rows = found
-    idx = {h: i for i, h in enumerate(headers)}
-    out: dict[str, dict[str, str]] = {}
-    for r in rows:
-        def cell(k: str) -> str:
-            i = idx.get(k)
-            return r[i] if i is not None and i < len(r) else ""
-        if not cell("Semestre"):
-            continue
-        out[f"{cell('Niveau')}|{cell('Semestre')}|{cell('AU')}"] = {
-            "niveau": cell("Niveau"),
-            "sem": cell("Semestre"),
-            "au": cell("AU"),
-            "moy": cell("Moy SEM"),
-            "dec": cell("Decesion") or cell("Decision"),  # site typo
-            "rank": cell("Classement"),
-            "pj": cell("PJ"),
-        }
-    return out
-
-
-def _fetch_extras(session: requests.Session, timeout: int) -> dict[str, dict | None]:
-    """Fetch the extra watched pages; None for a page means fetch failed (carry old state forward)."""
-    pages = {
-        "absences": (ABSENCE_PATH, _parse_absence_log),
-        "sanctions": (SANCTIONS_PATH, _parse_sanctions),
-        "modules": (MODS_PATH, _parse_modules_encours),
-        "semesters": (SEM_PATH, _parse_semester_results),
+        for a in items
     }
-    out: dict[str, dict | None] = {}
-    for key, (path, parser) in pages.items():
-        try:
-            resp = session.get(f"{SCHOOLAPP_BASE}{path}", timeout=timeout)
-            resp.raise_for_status()
-            if _looks_like_login_page(resp.text):
-                raise RuntimeError("session lost")
-            out[key] = parser(resp.text)
-        except Exception as exc:
-            log("WARNING", f"Could not fetch {path}: {exc}")
-            out[key] = None
-    return out
+
+
+def _sanctions_blob(items: list[Sanction]) -> dict[str, str]:
+    return {s.key: s.value for s in items}
+
+
+def _modules_blob(items: list[ModuleGrade]) -> dict[str, dict[str, str]]:
+    return {
+        f"{m.code}|{m.au}": {"code": m.code, "au": m.au, "moy": m.moy, "dec": m.decision}
+        for m in items
+    }
+
+
+def _semesters_blob(items: list[SemesterResult]) -> dict[str, dict[str, str]]:
+    return {
+        f"{s.niveau}|{s.semestre}|{s.au}": {
+            "niveau": s.niveau,
+            "sem": s.semestre,
+            "au": s.au,
+            "moy": s.moy_sem,
+            "dec": s.decision,
+            "rank": s.classement,
+            "pj": s.pj,
+        }
+        for s in items
+    }
 
 
 def _all_titles() -> tuple[dict[str, str], dict[str, str]]:
@@ -1099,53 +989,45 @@ def _tg_semester_section(new_sems: dict, old_sems: dict | None) -> str | None:
     return "\n".join(lines) if lines else None
 
 
-def _login(session: requests.Session, *, email: str, password: str, timeout: int) -> None:
-    login_url = f"{SCHOOLAPP_BASE}{LOGIN_PATH}"
-    r = session.get(login_url, timeout=timeout)
-    log("INFO", f"GET {login_url}")
-    r.raise_for_status()
-
-    csrf = _extract_csrf(r.text)
-    if not csrf:
-        log("ERROR", "CSRF token missing on login page")
-        raise RuntimeError("Login page changed: CSRF token missing")
-
-    payload = {"email": email, "password": password, "_csrf": csrf}
-    log("INFO", f"POST {login_url} (auth) using email={email}")
-    posted = session.post(login_url, data=payload, timeout=timeout)
-    posted.raise_for_status()
-    log("SUCCESS", "Authentication POST completed")
-
-
 def check_once(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, notify_email: bool, config: dict | None, notify_telegram: bool = False, session: requests.Session | None = None) -> int:
     if session is None:
         session = requests.Session()
         session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
 
+    client = SchoolAppClient(session=session, timeout=timeout)
+    client.set_credentials(email, password)
+
+    # Pre-flight the marks page: bad credentials fail here after a single login
+    # attempt (as before), instead of once per resource inside fetch_all.
     marks_url = f"{SCHOOLAPP_BASE}{MARKS_PATH}"
-
     log("INFO", f"GET {marks_url}")
-    page = session.get(marks_url, timeout=timeout)
-    page.raise_for_status()
-
-    if _looks_like_login_page(page.text):
-        log("INFO", "Session expired or fresh - authenticating")
-        _login(session, email=email, password=password, timeout=timeout)
-        page = session.get(marks_url, timeout=timeout)
-        page.raise_for_status()
-        if _looks_like_login_page(page.text):
-            raise RuntimeError("Login failed: verify email/password")
+    marks_html = client.get_page(MARKS_PATH)
     log("SUCCESS", "Fetched marks page")
+    headers, rows = _extract_table(marks_html)
 
-    headers, rows = _extract_table(page.text)
+    log("INFO", "Fetching remaining student resources (library fetch_all)")
+    data = client.fetch_all()
+    for name, err in data.errors.items():
+        log("WARNING", f"Could not fetch {name}: {err}")
 
     path = _snapshot_path(semester, state_file)
     old = _load_snapshot(path)
     grades_changed = old is None or _marks_state(old.headers, old.rows, semester) != _marks_state(headers, rows, semester)
 
-    # Extra pages: absences, sanctions, official module & semester results
+    # Extra pages: absences, sanctions, official module & semester results.
+    # None means the fetch failed - carry the previous cached blob forward.
+    # Modules are re-parsed from the encours page bytes because data.module_grades
+    # merges in past-year rows, which must not enter the legacy blob.
+    mods_blob = None
+    if "module_grades" not in data.errors and MODULES_PATH in client.last_pages:
+        mods_blob = _modules_blob(parse_module_grades(client.last_pages[MODULES_PATH]))
+    fetched: dict[str, dict | None] = {
+        "absences": None if "absences" in data.errors else _absences_blob(data.absences),
+        "sanctions": None if "sanctions" in data.errors else _sanctions_blob(data.sanctions),
+        "modules": mods_blob,
+        "semesters": None if "semester_results" in data.errors else _semesters_blob(data.semester_results),
+    }
     extras_old = old.extras if old and isinstance(old.extras, dict) else {}
-    fetched = _fetch_extras(session, timeout)
     extras_new: dict[str, dict | None] = {}
     for key, value in fetched.items():
         extras_new[key] = extras_old.get(key) if value is None else value
@@ -1162,6 +1044,13 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
 
     snap = Snapshot(headers=headers, rows=rows, fingerprint=_fingerprint(headers, rows), extras=extras_new)
     _save_snapshot(path, snap)
+
+    # Per-resource envelopes for the new API endpoints (spec §8.3). A store write
+    # failure must not cost the notification below.
+    try:
+        store.save_student_data(data, source="watcher")
+    except Exception as exc:  # noqa: BLE001
+        log("WARNING", f"Could not persist resource store: {exc}")
 
     changed = grades_changed or bool(extra_cards)
 
@@ -1309,129 +1198,31 @@ def run_health_check(*, email: str, password: str, timeout: int) -> dict[str, st
 
 def fetch_element_details(*, email: str, password: str, timeout: int, element_code: str, eval_kind: str = "all") -> dict | None:
     """Fetch statistics popup data for a specific element (CC/EX/TP/Moy)."""
-    session = requests.Session()
-    session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+    client = SchoolAppClient(timeout=timeout)
+    client.session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+    log("INFO", f"Authenticating as {email}")
+    client.login(email, password)
+    log("SUCCESS", "Authenticated")
 
-    login_url = f"{SCHOOLAPP_BASE}{LOGIN_PATH}"
-    
-    log("INFO", f"GET {login_url}")
-    r = session.get(login_url, timeout=timeout)
-    r.raise_for_status()
-    log("SUCCESS", "Fetched login page")
-
-    csrf = _extract_csrf(r.text)
-    if not csrf:
-        log("ERROR", "CSRF token missing on login page")
-        raise RuntimeError("Login page changed: CSRF token missing")
-
-    payload = {"email": email, "password": password, "_csrf": csrf}
-    log("INFO", f"POST {login_url} (auth) using email={email}")
-    posted = session.post(login_url, data=payload, timeout=timeout)
-    posted.raise_for_status()
-    log("SUCCESS", "Authentication POST completed")
-
-    # Fetch the main marks page to get element details
-    marks_url = f"{SCHOOLAPP_BASE}{MARKS_PATH}"
-    log("INFO", f"GET {marks_url}")
-    page = session.get(marks_url, timeout=timeout)
-    page.raise_for_status()
-    log("SUCCESS", "Fetched marks page")
-
-    if _looks_like_login_page(page.text):
-        raise RuntimeError("Login failed: verify email/password")
-
-    soup = BeautifulSoup(page.text, "html.parser")
-    tables = soup.find_all("table")
-    if not tables:
+    stats = client.mark_statistics(element_code, eval_kind=eval_kind)
+    if not stats:
         return None
 
-    best = max(tables, key=lambda t: len(t.find_all("tr")))
-    details: dict = {"element_code": element_code, "stats": []}
+    grades = parse_element_grades(client.last_pages.get(ELEMENTS_PATH, ""))
+    target = next((g for g in grades if g.code.upper() == element_code.upper()), None)
 
-    tr_match = None
-    for tr in best.find_all("tr"):
-        tds = tr.find_all("td")
-        if not tds:
-            continue
-        code = _normalize_cell(tds[0].get_text(" ", strip=True)) if len(tds) >= 1 else ""
-        if code.upper() == element_code.upper():
-            tr_match = tr
-            details["data"] = [_normalize_cell(td.get_text(" ", strip=True)) for td in tds]
-            break
-
-    if tr_match is None:
-        return None
-
-    tds = tr_match.find_all("td")
-    if len(tds) < 10:
-        return None
-
-    au = _normalize_cell(tds[1].get_text(" ", strip=True))
-    class_to_eval = {
-        "notecc": ("NoteCC", 2),
-        "noteex": ("NoteEX", 3),
-        "notetp": ("NoteTP", 4),
-        "moyelem": ("MoyElem", 8),
+    return {
+        "element_code": element_code,
+        "data": list(target.raw.values()) if target else [],
+        "stats": [
+            {
+                "eval": s.eval_kind,
+                "title": s.title or f"Statistiques {s.eval_kind} - {element_code.upper()}",
+                "rows": s.rows,
+            }
+            for s in stats
+        ],
     }
-
-    normalized_eval = eval_kind.strip().lower()
-    wanted_classes: set[str]
-    if normalized_eval in {"cc", "notecc"}:
-        wanted_classes = {"notecc"}
-    elif normalized_eval in {"ex", "noteex"}:
-        wanted_classes = {"noteex"}
-    elif normalized_eval in {"tp", "notetp"}:
-        wanted_classes = {"notetp"}
-    elif normalized_eval in {"moy", "moyelem", "moyenne"}:
-        wanted_classes = {"moyelem"}
-    else:
-        wanted_classes = set(class_to_eval.keys())
-
-    stats_url = f"{SCHOOLAPP_BASE}{STATS_PATH}"
-    for css_class, (eval_param, idx) in class_to_eval.items():
-        if css_class not in wanted_classes:
-            continue
-        if idx >= len(tds):
-            continue
-        note = _normalize_cell(tds[idx].get_text(" ", strip=True))
-        if not note or note == "--":
-            continue
-
-        params = {
-            "eval": eval_param,
-            "codeelem": element_code.upper(),
-            "au": au,
-            "note": note,
-        }
-        log("INFO", f"GET {stats_url} eval={eval_param} codeelem={element_code.upper()} au={au} note={note}")
-        resp = session.get(stats_url, params=params, timeout=timeout)
-        resp.raise_for_status()
-
-        popup_soup = BeautifulSoup(resp.text, "html.parser")
-        stat_div = popup_soup.select_one("div.stat")
-        scope = stat_div if stat_div else popup_soup
-
-        title_node = scope.find("p")
-        title = _normalize_cell(title_node.get_text(" ", strip=True)) if title_node else f"Statistiques {eval_param} - {element_code.upper()}"
-
-        stat_table = scope.find("table")
-        rows: list[list[str]] = []
-        if stat_table:
-            for row in stat_table.find_all("tr"):
-                cols = row.find_all(["th", "td"])
-                if not cols:
-                    continue
-                parsed = [_normalize_cell(c.get_text(" ", strip=True)) for c in cols]
-                if any(parsed):
-                    rows.append(parsed)
-
-        details["stats"].append({
-            "eval": eval_param,
-            "title": title,
-            "rows": rows,
-        })
-
-    return details if details.get("stats") else None
 
 
 SLOW_WINDOW = (4, 6)  # local hours with reduced polling
