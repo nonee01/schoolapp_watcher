@@ -17,10 +17,7 @@ try:
 except Exception:  # pragma: no cover
     tomli = None
 
-from rich.console import Console
-
-
-console = Console()
+from .render import console, err_console  # themed: stdout=data, stderr=chrome
 
 try:
     import keyring
@@ -31,6 +28,15 @@ except Exception:  # optional
 LOG_LEVEL_NAME = os.environ.get("SCHOOLAPP_LOG_LEVEL", "INFO").upper()
 _LEVELS = {"DEBUG": 10, "INFO": 20, "SUCCESS": 25, "WARNING": 30, "ERROR": 40}
 LOG_LEVEL = _LEVELS.get(LOG_LEVEL_NAME, 20)
+
+# When quiet, banner + logs (the stderr "chrome") are silenced; command results
+# on stdout are unaffected.
+QUIET = os.environ.get("SCHOOLAPP_QUIET", "").lower() in ("1", "true", "yes")
+
+
+def set_quiet(value: bool) -> None:
+    global QUIET
+    QUIET = value
 
 
 def set_log_level(level: str) -> None:
@@ -49,7 +55,9 @@ class AppContext:
 
 
 def banner() -> None:
-    console.print("[bold cyan]SchoolApp[/bold cyan] [dim]semester CLI[/dim]")
+    if QUIET:
+        return
+    err_console.print("[bold cyan]SchoolApp[/bold cyan] [dim]semester CLI[/dim]")
 
 
 def log(level: str, message: str) -> None:
@@ -63,10 +71,11 @@ def log(level: str, message: str) -> None:
     }
     level_up = level.upper()
     num = _LEVELS.get(level_up, 20)
-    if num < LOG_LEVEL:
+    if num < LOG_LEVEL or QUIET:
         return
     color = palette.get(level_up, "white")
-    console.print(f"[dim][{stamp}][/dim] [{color}]{level_up}[/{color}] {message}")
+    # Logs are chrome → stderr, so they never pollute piped stdout / --json.
+    err_console.print(f"[dim][{stamp}][/dim] [{color}]{level_up}[/{color}] {message}")
 
 
 def _create_env_from_example_in_dir(base_dir: Path) -> bool:

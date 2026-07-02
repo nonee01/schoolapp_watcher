@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
+import sys
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, store
+from . import __version__, render, store
 from .client import CATALOG_PATH, FILIERES_PATH, SchoolAppClient
 from .extractors import crawl_catalog
 from .extractors.catalog_presets import (
@@ -19,12 +22,21 @@ from .extractors.catalog_presets import (
     to_module_def,
 )
 from .presets import PRESET_2A_S3, PRESET_2A_S4
+from .render import console, err_console
 from .semesters.s3 import app as s3_app
 from .semesters.s4 import app as s4_app
 from .utils import AppContext, banner, load_config, load_env_file, log
 from .utils import resolve_credentials
-from .utils import set_log_level
+from .utils import set_log_level, set_quiet
 from .watcher import _append_history, _history_path, run_health_check
+
+# Reusable across every read/fetch command: clean JSON to stdout (chrome stays
+# on stderr, so the pipe is always parseable).
+JSON_OPT = typer.Option(False, "--json", help="Emit machine-readable JSON to stdout")
+
+
+def _emit_json(data) -> None:
+    typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 app = typer.Typer(
     name="schoolapp",
@@ -68,28 +80,35 @@ def _split_csv(value: str | None) -> list[str] | None:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _version_callback(value: bool) -> None:
+    # Eager so `schoolapp --version` prints and exits before typer's
+    # no_args_is_help rejects the (absent) subcommand.
+    if value:
+        typer.echo(f"schoolapp {__version__}")
+        raise typer.Exit()
+
+
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: bool = typer.Option(False, "--version", help="Show version and exit"),
+    version: bool = typer.Option(False, "--version", callback=_version_callback,
+                                 is_eager=True, help="Show version and exit"),
     debug: bool = typer.Option(False, "--debug", help="Enable debug mode"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", "--no-banner",
+                               help="Silence the banner and logs (stderr chrome only)"),
     config: str | None = typer.Option(None, "--config", help="Path to config TOML (default ~/.schoolapp/config.toml)"),
     env_file: str | None = typer.Option(None, "--env-file", help="Load KEY=VALUE env vars from file"),
 ) -> None:
-    if version:
-        typer.echo(f"schoolapp {__version__}")
-        raise typer.Exit(code=0)
+    # --json is a per-command flag; go quiet for it too so stderr stays clean.
+    # Set explicitly (not latching) so the flag resets between invocations.
+    set_quiet(quiet or "--json" in sys.argv)
 
     load_env_file(env_file)
     cfg = load_config(config)
     ctx.obj = AppContext(debug=debug, config=cfg)
-    # set log level from env or debug flag
     if debug:
         set_log_level("DEBUG")
         log("INFO", "Debug mode enabled")
-    else:
-        # ensure env var is respected by utils module init
-        pass
 
     banner()
     if config:
@@ -157,20 +176,17 @@ def profile_cmd(
     email: str | None = typer.Option(None, help="SchoolApp email (overrides config/env)"),
     password: str | None = typer.Option(None, help="SchoolApp password (overrides config/env)"),
     timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
+    json_out: bool = JSON_OPT,
 ) -> None:
-    """Fetch and display the student profile (/index)."""
-    from .utils import console
-
+    """Live-fetch the student profile (/index), cache it to the store, and display it."""
     client = _library_client(ctx, email, password, timeout)
-    p = client.profile()
-    table = Table(title="Student profile", header_style="bold magenta")
-    table.add_column("Field")
-    table.add_column("Value")
-    for k, v in p.raw.items():
-        table.add_row(k, v or "--")
-    if p.photo_url:
-        table.add_row("Photo", p.photo_url)
-    console.print(table)
+    with err_console.status("Fetching profile…"):
+        p = client.profile()
+    store.save_resource("student/profile", p, source="profile")
+    if json_out:
+        _emit_json(asdict(p))
+        return
+    console.print(render.profile_view(asdict(p)))
 
 
 @app.command("fetch-all")
@@ -182,29 +198,37 @@ def fetch_all_cmd(
     history: bool = typer.Option(True, "--history/--no-history", help="Include past-year grade pages"),
     stats: bool = typer.Option(False, "--stats", help="Also fetch per-element statistics popups"),
     save: bool = typer.Option(True, "--save/--no-save", help="Persist to the state store"),
+    json_out: bool = JSON_OPT,
 ) -> None:
     """Fetch every per-student resource; persist to the store unless --no-save."""
-    from .utils import console
-
     client = _library_client(ctx, email, password, timeout)
-    data = client.fetch_all(include_history=history, include_stats=stats)
+    with err_console.status("Fetching all resources…"):
+        data = client.fetch_all(include_history=history, include_stats=stats)
 
     if save:
         store.save_student_data(data, source="fetch_all")
 
-    table = Table(title="fetch-all", header_style="bold magenta")
-    table.add_column("Resource")
-    table.add_column("Result")
-    table.add_row("profile", "ok" if data.profile else "--")
-    table.add_row("diploma", ("empty" if data.diploma.empty else "ok") if data.diploma else "--")
-    for attr in ("element_grades", "module_grades", "semester_results", "year_results",
-                 "absences", "absence_summary", "sanctions", "courses", "stats", "documents"):
-        table.add_row(attr, str(len(getattr(data, attr))))
-    console.print(table)
+    counts = {attr: len(getattr(data, attr)) for attr in (
+        "element_grades", "module_grades", "semester_results", "year_results",
+        "absences", "absence_summary", "sanctions", "courses", "stats", "documents")}
+    if json_out:
+        _emit_json({
+            "profile": bool(data.profile),
+            "diploma": (None if data.diploma is None else ("empty" if data.diploma.empty else "ok")),
+            "counts": counts,
+            "errors": data.errors,
+            "saved_to": str(store.state_dir()) if save else None,
+        })
+        return
+
+    rows = [["profile", "ok" if data.profile else "--"],
+            ["diploma", ("empty" if data.diploma.empty else "ok") if data.diploma else "--"]]
+    rows += [[k, str(v)] for k, v in counts.items()]
+    console.print(render.data_table("fetch-all", ["Resource", "Result"], rows))
     if save:
-        console.print(f"Saved to {store.state_dir()}")
+        err_console.print(f"[muted]Saved to {store.state_dir()}[/muted]")
     for name, err in data.errors.items():
-        console.print(f"[red]{name}: {err}[/red]")
+        err_console.print(f"[error]{name}: {err}[/error]")
 
 
 @app.command("export")
@@ -249,22 +273,17 @@ STORE_RESOURCES = ["student/all", *RESOURCE_FILES.values(), "catalog/modules", "
 
 
 @app.command("status")
-def status_cmd() -> None:
+def status_cmd(json_out: bool = JSON_OPT) -> None:
     """Show what the API would serve: per-resource freshness from the local store.
 
     This is the CLI mirror of `/api/status`'s `resources` map — no network, no auth."""
-    from .utils import console
-
     fresh = store.freshness(STORE_RESOURCES)
-    table = Table(title=f"State store: {store.state_dir()}", header_style="bold magenta")
-    table.add_column("Resource")
-    table.add_column("Fetched at (UTC)")
-    for name in STORE_RESOURCES:
-        ts = fresh.get(name)
-        table.add_row(name, ts or "[dim]— not cached[/dim]")
-    console.print(table)
+    if json_out:
+        _emit_json({"store": str(store.state_dir()), "resources": fresh})
+        return
+    console.print(render.freshness_table(str(store.state_dir()), fresh))
     if not any(fresh.values()):
-        console.print("[yellow]Store is empty — run `schoolapp fetch-all` or the watcher first.[/yellow]")
+        err_console.print("[warning]Store is empty — run `schoolapp fetch-all` or the watcher first.[/warning]")
 
 
 @app.command("serve")
@@ -308,27 +327,27 @@ def catalog_crawl(
     min_interval: float = typer.Option(1.0, help="Seconds between requests (politeness)"),
 ) -> None:
     """Crawl the (niveau × filière × semestre) catalog into the store. Incremental: re-runs merge."""
-    from .utils import console
-
     client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
     merged = {(m.code_mod, m.niveau, m.semestre, m.filiere): m for m in load_catalog_modules()}
     initial = {k: asdict(m) for k, m in merged.items()}
     progress = {"combos": 0, "errors": 0}
 
-    def on_combo(n, f, s, fresh, err):
-        progress["combos"] += 1
-        if err is not None:
-            progress["errors"] += 1
-            log("WARNING", f"catalog combo ({n}, {f}, {s}) failed: {err}")
-            return
-        if fresh:
-            for m in fresh:
-                merged[(m.code_mod, m.niveau, m.semestre, m.filiere)] = m
-            store.save_resource(CATALOG_RESOURCE, list(merged.values()), source=CATALOG_PATH)
-            log("INFO", f"({n}, {f}, {s}) +{len(fresh)} modules (total {len(merged)})")
+    with err_console.status("Crawling catalog…") as spinner:
+        def on_combo(n, f, s, fresh, err):
+            progress["combos"] += 1
+            if err is not None:
+                progress["errors"] += 1
+                log("WARNING", f"catalog combo ({n}, {f}, {s}) failed: {err}")
+            elif fresh:
+                for m in fresh:
+                    merged[(m.code_mod, m.niveau, m.semestre, m.filiere)] = m
+                store.save_resource(CATALOG_RESOURCE, list(merged.values()), source=CATALOG_PATH)
+            spinner.update(
+                f"Crawling catalog… {progress['combos']} combos, {len(merged)} modules, "
+                f"{progress['errors']} errors")
 
-    crawl_catalog(client, niveaux=_split_csv(niveaux), filieres=_split_csv(filieres),
-                  on_combo=on_combo)
+        crawl_catalog(client, niveaux=_split_csv(niveaux), filieres=_split_csv(filieres),
+                      on_combo=on_combo)
     filiere_models = client.filieres()
     store.save_resource("catalog/filieres", filiere_models, source=FILIERES_PATH)
 
@@ -381,6 +400,257 @@ def catalog_show(
         table.add_row(d.code, d.title, str(d.coef_mod), str(d.seuil),
                       str(d.eliminatoire), elems or "--")
     console.print(table)
+
+
+# ── `show` group: offline, reads the store, mirrors every API endpoint ────────
+
+show_app = typer.Typer(no_args_is_help=True,
+                       help="Display cached data from the store (offline; mirrors the API).")
+app.add_typer(show_app, name="show")
+
+
+def _load(name: str):
+    env = store.load_resource(name)
+    return (env["data"], env.get("fetched_at")) if env else (None, None)
+
+
+def _latest_au(items: list[dict]) -> list[dict]:
+    aus = [g.get("au", "") for g in items if g.get("au")]
+    if not aus:
+        return items
+    latest = max(aus)
+    return [g for g in items if g.get("au") == latest]
+
+
+def _render_or_json(resource: str, name: str, renderer, json_out: bool, transform=lambda d: d):
+    data, ts = _load(name)
+    if data is None:
+        if json_out:
+            _emit_json(None)
+        else:
+            err_console.print(render.empty_hint(resource))
+        return
+    shown = transform(data)
+    if json_out:
+        _emit_json(shown)
+        return
+    console.print(renderer(shown))
+    if ts:
+        err_console.print(f"[muted]fetched {ts}[/muted]")
+
+
+@show_app.command("all")
+def show_all(json_out: bool = JSON_OPT) -> None:
+    """The full StudentData bundle (counts overview, or the whole payload as --json)."""
+    data, ts = _load("student/all")
+    if data is None:
+        if json_out:
+            _emit_json(None)
+        else:
+            err_console.print(render.empty_hint("student data"))
+        return
+    if json_out:
+        _emit_json(data)
+        return
+    rows = []
+    for key, value in data.items():
+        if key in ("fetched_at", "errors"):
+            continue
+        if isinstance(value, list):
+            rows.append([key, str(len(value))])
+        elif isinstance(value, dict):
+            rows.append([key, "present"])
+        else:
+            rows.append([key, "present" if value else "--"])
+    console.print(render.data_table("Student data (cached)", ["Resource", "Count / state"], rows))
+    for name, err in (data.get("errors") or {}).items():
+        err_console.print(f"[error]{name}: {err}[/error]")
+    if ts:
+        err_console.print(f"[muted]fetched {ts}[/muted]")
+
+
+@show_app.command("profile")
+def show_profile(json_out: bool = JSON_OPT) -> None:
+    """Cached student profile."""
+    _render_or_json("profile", "student/profile", render.profile_view, json_out)
+
+
+@show_app.command("grades")
+def show_grades(
+    history: bool = typer.Option(False, "--history", help="Include past-year rows (default: latest AU only)"),
+    modules: bool = typer.Option(False, "--modules", help="Show module grades instead of element grades"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Cached grades — element grades by default, module grades with --modules."""
+    name = "student/modules" if modules else "student/elements"
+    renderer = render.module_grades_table if modules else render.element_grades_table
+    transform = (lambda d: d) if history else _latest_au
+    _render_or_json("grades", name, renderer, json_out, transform)
+
+
+@show_app.command("semesters")
+def show_semesters(json_out: bool = JSON_OPT) -> None:
+    """Cached semester results."""
+    _render_or_json("semester results", "student/semesters", render.semesters_table, json_out)
+
+
+@show_app.command("years")
+def show_years(json_out: bool = JSON_OPT) -> None:
+    """Cached year results."""
+    _render_or_json("year results", "student/years", render.years_table, json_out)
+
+
+@show_app.command("courses")
+def show_courses(json_out: bool = JSON_OPT) -> None:
+    """Cached course enrollments."""
+    _render_or_json("courses", "student/courses", render.courses_table, json_out)
+
+
+@show_app.command("absences")
+def show_absences(json_out: bool = JSON_OPT) -> None:
+    """Cached absences: event log, per-element summary, and sanctions."""
+    absences, ts = _load("student/absences")
+    summary, _ = _load("student/absence_summary")
+    sanctions, _ = _load("student/sanctions")
+    if absences is None and summary is None and sanctions is None:
+        if json_out:
+            _emit_json(None)
+        else:
+            err_console.print(render.empty_hint("absences"))
+        return
+    if json_out:
+        _emit_json({"absences": absences or [], "summary": summary or [], "sanctions": sanctions or []})
+        return
+    console.print(render.absences_view(absences or [], summary or [], sanctions or []))
+    if ts:
+        err_console.print(f"[muted]fetched {ts}[/muted]")
+
+
+@show_app.command("stats")
+def show_stats(
+    code: Optional[str] = typer.Argument(None, help="Filter to one element code"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Cached per-element statistics (fetch with `fetch-all --stats`)."""
+    def transform(items):
+        return [s for s in items if s.get("element", "").upper() == code.upper()] if code else items
+    _render_or_json("statistics", "student/stats", render.stats_view, json_out, transform)
+
+
+@show_app.command("documents")
+def show_documents(json_out: bool = JSON_OPT) -> None:
+    """Cached document descriptors and whether their PDF is downloaded."""
+    data, ts = _load("student/documents")
+    if data is None:
+        if json_out:
+            _emit_json(None)
+        else:
+            err_console.print(render.empty_hint("documents"))
+        return
+    cached = {d.get("filename", ""): store.document_path(d.get("filename", "")).exists() for d in data}
+    if json_out:
+        _emit_json([{**d, "cached": cached.get(d.get("filename", ""), False)} for d in data])
+        return
+    console.print(render.documents_table(data, cached=cached))
+    if ts:
+        err_console.print(f"[muted]fetched {ts}[/muted]")
+
+
+@show_app.command("catalog")
+def show_catalog(
+    niveau: Optional[str] = typer.Option(None, "--niveau"),
+    filiere: Optional[str] = typer.Option(None, "--filiere"),
+    semestre: Optional[str] = typer.Option(None, "--semestre"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Cached institution catalog modules (filterable)."""
+    def transform(items):
+        out = items
+        for field, want in (("niveau", niveau), ("filiere", filiere), ("semestre", semestre)):
+            if want:
+                out = [m for m in out if (m.get(field) or "").upper() == want.upper()]
+        return out
+    _render_or_json("catalog", "catalog/modules", render.catalog_table, json_out, transform)
+
+
+@show_app.command("filieres")
+def show_filieres(json_out: bool = JSON_OPT) -> None:
+    """Cached filière list."""
+    _render_or_json("filières", "catalog/filieres", render.filieres_table, json_out)
+
+
+# ── `documents` group: list + download the student PDFs ───────────────────────
+
+documents_app = typer.Typer(no_args_is_help=True,
+                            help="Student PDF documents (attestation de scolarité, relevés).")
+app.add_typer(documents_app, name="documents")
+
+
+@documents_app.command("list")
+def documents_list(json_out: bool = JSON_OPT) -> None:
+    """List document descriptors from the store and whether each PDF is cached."""
+    show_documents(json_out=json_out)
+
+
+@documents_app.command("download")
+def documents_download(
+    ctx: typer.Context,
+    kind: Optional[str] = typer.Argument(None, help="Document kind or filename (omit to list choices)"),
+    download_all: bool = typer.Option(False, "--all", help="Download every available document"),
+    out: Optional[str] = typer.Option(None, "--out", help="Also copy the PDFs into this directory"),
+    email: str | None = typer.Option(None, help="SchoolApp email (overrides config/env)"),
+    password: str | None = typer.Option(None, help="SchoolApp password (overrides config/env)"),
+    timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Download attestation / relevé PDFs, caching them into the store."""
+    client = _library_client(ctx, email, password, timeout)
+    with err_console.status("Listing documents…"):
+        docs = client.documents()
+
+    if download_all:
+        selected = docs
+    elif kind:
+        selected = [d for d in docs if kind in (d.kind, d.filename)]
+        if not selected:
+            err_console.print(render.error_panel(
+                f"No document matches '{kind}'.",
+                hint="Available: " + ", ".join(d.kind for d in docs)))
+            raise typer.Exit(code=1)
+    else:  # nothing selected → show the menu
+        if json_out:
+            _emit_json([{"kind": d.kind, "filename": d.filename} for d in docs])
+        else:
+            console.print(render.data_table("Available documents", ["Kind", "Filename"],
+                                            [[d.kind, d.filename] for d in docs],
+                                            caption="Pass a KIND or --all to download"))
+        return
+
+    out_dir = Path(out).expanduser() if out else None
+    if out_dir:
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest: list[dict] = []
+    for d in selected:
+        try:
+            with err_console.status(f"Downloading {d.filename}…"):
+                content = client.download(d)
+            store.save_document(d.filename, content)
+            if out_dir:
+                (out_dir / d.filename).write_bytes(content)
+            manifest.append({"kind": d.kind, "filename": d.filename, "bytes": len(content),
+                             "cached_path": str(store.document_path(d.filename))})
+            log("SUCCESS", f"downloaded {d.filename} ({len(content)} bytes)")
+        except Exception as exc:  # noqa: BLE001 — one bad PDF must not abort the rest
+            manifest.append({"kind": d.kind, "filename": d.filename, "error": str(exc)})
+            log("WARNING", f"download {d.filename} failed: {exc}")
+
+    if json_out:
+        _emit_json(manifest)
+        return
+    rows = [[m["kind"], m["filename"], str(m.get("bytes", "--")),
+             m.get("cached_path") or m.get("error", "")] for m in manifest]
+    console.print(render.data_table("Downloaded", ["Kind", "Filename", "Bytes", "Path / error"], rows))
 
 
 if __name__ == "__main__":
