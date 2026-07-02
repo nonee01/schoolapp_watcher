@@ -55,6 +55,24 @@ def load_resource(name: str, directory: Path | None = None) -> dict | None:
     return envelope if isinstance(envelope, dict) and "data" in envelope else None
 
 
+def documents_dir(directory: Path | None = None) -> Path:
+    return (directory or state_dir()) / "documents"
+
+
+def document_path(filename: str, directory: Path | None = None) -> Path:
+    return documents_dir(directory) / filename
+
+
+def save_document(filename: str, content: bytes, directory: Path | None = None) -> Path:
+    """Cache a downloaded PDF so /api/documents/<kind> can serve it offline."""
+    path = document_path(filename, directory)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_bytes(content)
+    os.replace(tmp, path)
+    return path
+
+
 # StudentData attribute -> per-resource envelope name (shared by CLI + watcher + API).
 RESOURCE_FILES = {
     "profile": "student/profile",
