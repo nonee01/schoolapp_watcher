@@ -229,7 +229,9 @@ def export_cmd(
         docs_dir.mkdir(exist_ok=True)
         for doc in data.documents:
             try:
-                (docs_dir / doc.filename).write_bytes(client.download(doc))
+                content = client.download(doc)
+                (docs_dir / doc.filename).write_bytes(content)
+                store.save_document(doc.filename, content)  # also cache for /api/documents/<kind>
                 log("INFO", f"downloaded {doc.filename}")
             except Exception as exc:  # noqa: BLE001 — one bad PDF must not kill the export
                 log("WARNING", f"download {doc.filename} failed: {exc}")

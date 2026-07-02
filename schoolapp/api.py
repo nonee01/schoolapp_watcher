@@ -7,8 +7,9 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
+from . import store
 from .presets import modules_for_semester
 from .watcher import (
     SLOW_INTERVAL,
@@ -74,6 +75,9 @@ def status():
         "next_check": next_check,
         "poll_interval": _active_interval(),
         "server_time": datetime.now().isoformat(timespec="seconds"),
+        # additive (spec §8.1): per-resource freshness map from the store
+        "resources": store.freshness(
+            ["student/all", *store.RESOURCE_FILES.values(), "catalog/modules", "catalog/filieres"]),
     })
 
 
@@ -262,6 +266,149 @@ def resume_watcher():
         return err
     _systemctl("start", WATCHER_UNIT)
     return jsonify({"watcher": _systemctl("is-active", WATCHER_UNIT) or "unknown"})
+
+
+# ── library-store endpoints (spec §8.1) — all additive, all cache-served ──────
+
+def _from_store(name: str, key: str, wrap=lambda d: d):
+    """Standard read: 401 via _auth, 404 when the envelope isn't cached yet."""
+    err = _auth()
+    if err:
+        return err
+    env = store.load_resource(name)
+    if env is None:
+        return jsonify({"error": f"No cached {name} yet — run the watcher or `schoolapp fetch-all`"}), 404
+    return jsonify({key: wrap(env["data"]), "fetched_at": env.get("fetched_at")})
+
+
+@app.get("/api/profile")
+def profile():
+    return _from_store("student/profile", "profile")
+
+
+@app.get("/api/years")
+def years():
+    return _from_store("student/years", "years")
+
+
+@app.get("/api/courses")
+def courses():
+    return _from_store("student/courses", "courses")
+
+
+@app.get("/api/all")
+def all_data():
+    err = _auth()
+    if err:
+        return err
+    env = store.load_resource("student/all")
+    if env is None:
+        return jsonify({"error": "No cached student data yet"}), 404
+    return jsonify(env)
+
+
+def _latest_au_only(items: list[dict]) -> list[dict]:
+    aus = [g.get("au", "") for g in items if g.get("au")]
+    if not aus:
+        return items
+    latest = max(aus)
+    return [g for g in items if g.get("au") == latest]
+
+
+def _want_history() -> bool:
+    return request.args.get("history", "0").lower() in ("1", "true", "yes")
+
+
+@app.get("/api/grades/elements")
+def grade_elements():
+    wrap = (lambda d: d) if _want_history() else _latest_au_only
+    return _from_store("student/elements", "elements", wrap)
+
+
+@app.get("/api/grades/modules")
+def grade_modules():
+    wrap = (lambda d: d) if _want_history() else _latest_au_only
+    return _from_store("student/modules", "modules", wrap)
+
+
+@app.get("/api/stats/<code>")
+def element_stats(code: str):
+    err = _auth()
+    if err:
+        return err
+    env = store.load_resource("student/stats")
+    stats = [s for s in (env["data"] if env else [])
+             if (s.get("element") or "").upper() == code.upper()]
+    if not stats:
+        return jsonify({"error": f"No cached statistics for {code} — run `schoolapp fetch-all --stats`"}), 404
+    return jsonify({"element": code.upper(), "stats": stats, "fetched_at": env.get("fetched_at")})
+
+
+@app.get("/api/documents")
+def documents():
+    def with_cached(docs: list[dict]) -> list[dict]:
+        return [{**d, "cached": store.document_path(d.get("filename", "")).exists()} for d in docs]
+    return _from_store("student/documents", "documents", with_cached)
+
+
+@app.get("/api/documents/<name>")
+def document_file(name: str):
+    err = _auth()
+    if err:
+        return err
+    if "/" in name or ".." in name:
+        return jsonify({"error": "Invalid document name"}), 400
+    path = store.document_path(name if name.endswith(".pdf") else f"{name}.pdf")
+    if not path.exists():
+        return jsonify({"error": f"{name} not downloaded yet — run `schoolapp export --with-documents`"}), 404
+    return send_file(path, mimetype="application/pdf")
+
+
+@app.get("/api/export")
+def export():
+    err = _auth()
+    if err:
+        return err
+    if request.args.get("format", "json").lower() != "zip":
+        env = store.load_resource("student/all")
+        if env is None:
+            return jsonify({"error": "No cached student data yet"}), 404
+        return jsonify(env)
+
+    import io
+    import zipfile
+
+    base = store.state_dir()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for sub in ("student", "catalog", "documents"):
+            folder = base / sub
+            if not folder.is_dir():
+                continue
+            for f in sorted(folder.iterdir()):
+                if f.is_file() and not f.name.endswith(".tmp"):
+                    zf.write(f, f"{sub}/{f.name}")
+    buf.seek(0)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return send_file(buf, mimetype="application/zip", as_attachment=True,
+                     download_name=f"schoolapp-export-{stamp}.zip")
+
+
+@app.get("/api/catalog")
+def catalog():
+    def filtered(mods: list[dict]) -> list[dict]:
+        out = mods
+        for field in ("niveau", "filiere", "semestre"):
+            want = request.args.get(field)
+            if want:
+                out = [m for m in out if (m.get(field) or "").upper() == want.upper()]
+        return out
+    return _from_store("catalog/modules", "modules", filtered)
+
+
+@app.get("/api/filieres")
+def filieres():
+    return _from_store("catalog/filieres", "filieres")
 
 
 if __name__ == "__main__":
