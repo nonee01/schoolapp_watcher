@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -21,6 +23,10 @@ SCHOOLAPP_BASE = "https://schoolapp.ensam-umi.ac.ma"
 LOGIN_PATH = "/login"
 MARKS_PATH = "/student/noteselem-encours"
 STATS_PATH = "/notes-stat/elemevalsat"
+ABSENCE_PATH = "/student/absence/bilan"
+SANCTIONS_PATH = "/student/absence/sanctions"
+MODS_PATH = "/student/notesmod-encours"
+SEM_PATH = "/student/notessem"
 
 
 @dataclass
@@ -28,6 +34,7 @@ class Snapshot:
     headers: list[str]
     rows: list[list[str]]
     fingerprint: str
+    extras: dict | None = None
 
 
 def _normalize_cell(text: str) -> str:
@@ -74,6 +81,39 @@ def _fingerprint(headers: list[str], rows: list[list[str]]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+_STATE_FIELDS = ("CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy", "Dec")
+
+
+def _marks_state(headers: list[str], rows: list[list[str]], semester: str) -> dict:
+    """Per-element mark values for this semester's modules, ignoring row order
+    and cosmetic columns, so only real grade changes count as a change."""
+    if "CodeElem" not in headers:
+        return {"__rows__": [list(r) for r in rows]}
+
+    idx = {h: i for i, h in enumerate(headers)}
+    try:
+        prefixes = {m.code.upper() for m in modules_for_semester(semester)}
+    except Exception:
+        prefixes = set()
+
+    ci = idx["CodeElem"]
+    state: dict[str, dict[str, str]] = {}
+    for r in rows:
+        if len(r) <= ci:
+            continue
+        code = r[ci].strip()
+        if not code:
+            continue
+        if prefixes and not any(code.upper().startswith(p) for p in prefixes):
+            continue
+        cells: dict[str, str] = {}
+        for field in _STATE_FIELDS:
+            i = idx.get(field)
+            cells[field] = r[i].strip() if i is not None and i < len(r) else ""
+        state[code] = cells
+    return state
+
+
 def _snapshot_path(semester: str, state_file: str | None) -> Path:
     if state_file:
         return Path(state_file)
@@ -82,16 +122,29 @@ def _snapshot_path(semester: str, state_file: str | None) -> Path:
     return base / f"{semester.lower()}_snapshot.json"
 
 
+def _history_path(semester: str, state_file: str | None) -> Path:
+    base = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state"))) / "schoolapp"
+    base.mkdir(parents=True, exist_ok=True)
+    return base / "changes.jsonl"
+
+
+def _append_history(path: Path, entry: dict) -> None:
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
 def _load_snapshot(path: Path) -> Snapshot | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
-    return Snapshot(headers=data.get("headers", []), rows=data.get("rows", []), fingerprint=data.get("fingerprint", ""))
+    return Snapshot(headers=data.get("headers", []), rows=data.get("rows", []), fingerprint=data.get("fingerprint", ""), extras=data.get("extras"))
 
 
 def _save_snapshot(path: Path, snap: Snapshot) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"headers": snap.headers, "rows": snap.rows, "fingerprint": snap.fingerprint}, indent=2), encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps({"headers": snap.headers, "rows": snap.rows, "fingerprint": snap.fingerprint, "extras": snap.extras or {}}, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _render_grouped_marks(headers: list[str], rows: list[list[str]], semester: str) -> bool:
@@ -310,17 +363,747 @@ def _render_consolidated_snapshot(headers: list[str], rows: list[list[str]], sem
     console.print(table)
 
 
-def check_once(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, notify_email: bool, config: dict | None) -> int:
-    session = requests.Session()
-    session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+def _is_validated(moy: str) -> bool:
+    try:
+        return float(moy.rstrip("*")) >= 11.0
+    except (ValueError, AttributeError):
+        return False
 
+
+def _status_style(moy: str) -> tuple[str, str, str]:
+    """Return (color, background, label) based on moyenne value vs 11 threshold."""
+    try:
+        val = float(moy.rstrip("*"))
+        if val >= 11.0:
+            return "#166534", "#dcfce7", "✓ Validé"
+        return "#991b1b", "#fee2e2", "✗ Non validé"
+    except (ValueError, AttributeError):
+        return "#374151", "#f3f4f6", "En attente"
+
+
+def _compute_moy(code: str, cc: str, ex: str, tp: str, element_defs: dict) -> str:
+    """Calculate moyenne from available marks using preset weights when site shows '--'."""
+    from .calculator import _to_float
+    defn = element_defs.get(code.upper())
+    if defn is None:
+        return "--"
+    cc_f = _to_float(cc)
+    ex_f = _to_float(ex)
+    tp_f = _to_float(tp)
+    # Need at least EX or TP to compute anything meaningful
+    if ex_f is None and tp_f is None:
+        return "--"
+    cc_val = cc_f if cc_f is not None else 0.0
+    denom = defn.coef_ecrit + defn.coef_tp
+    if tp_f is not None and denom > 0:
+        ex_combined = ((ex_f or 0.0) * defn.coef_ecrit + tp_f * defn.coef_tp) / denom
+    else:
+        ex_combined = ex_f if ex_f is not None else 0.0
+    moy = cc_val * defn.coef_cc + ex_combined * defn.coef_ex
+    return f"{moy:.2f}*"
+
+
+def _score_cell(label: str, value: str) -> str:
+    is_estimated = value.endswith("*")
+    display = value
+    color = "#111827" if not is_estimated else "#2563eb"
+    return f"""
+    <td style="text-align:center;padding:8px 6px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:2px;">{label}</div>
+      <div style="font-weight:600;font-size:15px;color:{color};">{display}</div>
+    </td>"""
+
+
+def _card_new(code: str, title: str, cc: str, ex: str, tp: str, moy: str) -> str:
+    fg, bg, status_label = _status_style(moy)
+    return f"""
+<div style="background:#ffffff;border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid {fg};box-shadow:0 1px 3px rgba(0,0,0,.08);">
+  <div style="font-size:13px;color:#6b7280;margin-bottom:2px;">{code} &nbsp;·&nbsp; <span style="color:#2563eb;font-weight:600;">NOUVEAU</span></div>
+  <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:12px;">{title}</div>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr>
+      {_score_cell("CC", cc)}
+      {_score_cell("EX", ex)}
+      {_score_cell("TP", tp)}
+      {_score_cell("Moyenne", moy)}
+    </tr>
+  </table>
+  <div style="margin-top:12px;display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:4px 12px;border-radius:20px;">{status_label}</div>
+</div>"""
+
+
+def _card_updated(code: str, title: str, cc: str, ex: str, tp: str, moy: str, diffs: dict[str, tuple[str, str]]) -> str:
+    fg, bg, status_label = _status_style(moy)
+    diff_rows = []
+    field_labels = {"CC": "CC", "EX": "EX", "TP": "TP", "Moy": "Moyenne", "MoySO": "Moy. ordinaire", "RAT": "Rattrapage", "MoySR": "Moy. rattrapage"}
+    for field, (old_val, new_val) in diffs.items():
+        if field == "Dec":
+            continue
+        diff_rows.append(f'<tr><td style="color:#6b7280;font-size:12px;padding:3px 0;width:70px;">{field_labels.get(field, field)}</td><td style="padding:3px 0;font-weight:600;">{old_val} → {new_val}</td></tr>')
+
+    return f"""
+<div style="background:#ffffff;border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid {fg};box-shadow:0 1px 3px rgba(0,0,0,.08);">
+  <div style="font-size:13px;color:#6b7280;margin-bottom:2px;">{code} &nbsp;·&nbsp; <span style="color:#d97706;font-weight:600;">MODIFIÉ</span></div>
+  <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:12px;">{title}</div>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr>
+      {_score_cell("CC", cc)}
+      {_score_cell("EX", ex)}
+      {_score_cell("TP", tp)}
+      {_score_cell("Moyenne", moy)}
+    </tr>
+  </table>
+  <div style="margin-top:12px;border-top:1px solid #f3f4f6;padding-top:10px;">
+    <table style="width:100%;border-collapse:collapse;">{"".join(diff_rows)}</table>
+  </div>
+  <div style="margin-top:10px;display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:4px 12px;border-radius:20px;">{status_label}</div>
+</div>"""
+
+
+def _compute_module_moy(mod, new_by_code: dict, idx: dict, element_defs: dict) -> tuple[str, bool]:
+    """Return (moyenne_str, is_partial). is_partial when some elements have no grades yet."""
+    from .calculator import _to_float
+
+    def cell(row: list[str], key: str) -> str:
+        i = idx.get(key)
+        if i is None or i >= len(row):
+            return "--"
+        v = row[i].strip()
+        return v if v else "--"
+
+    pts = 0.0
+    missing_coef = 0.0
+    has_any = False
+
+    for el in mod.elements:
+        row = new_by_code.get(el.code)
+        if row is None:
+            missing_coef += el.coef_eelem
+            continue
+
+        # Use site Moy if available, otherwise compute
+        site_moy = cell(row, "Moy")
+        if site_moy != "--":
+            try:
+                pts += float(site_moy) * el.coef_eelem
+                has_any = True
+                continue
+            except ValueError:
+                pass
+
+        el_moy = _compute_moy(el.code, cell(row, "CC"), cell(row, "EX"), cell(row, "TP"), element_defs)
+        if el_moy == "--":
+            missing_coef += el.coef_eelem
+            continue
+        try:
+            pts += float(el_moy.rstrip("*")) * el.coef_eelem
+            has_any = True
+        except ValueError:
+            missing_coef += el.coef_eelem
+
+    if not has_any:
+        return "--", False
+
+    avg = pts / (mod.coef_mod or 1.0)
+    is_partial = missing_coef > 0
+    return f"{avg:.2f}{'*' if is_partial else ''}", is_partial
+
+
+def _module_summary_card(mod_title: str, mod_code: str, moy: str, seuil: float) -> str:
+    fg, bg, status_label = _status_style(moy)
+    is_partial = moy.endswith("*")
+    moy_display = moy if moy != "--" else "—"
+    note = " <span style='font-size:11px;color:#6b7280;'>(partielle)</span>" if is_partial else ""
+    return f"""
+<div style="background:{bg};border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <div style="font-size:11px;color:{fg};opacity:0.8;margin-bottom:2px;">{mod_code} · seuil {seuil:.0f}/20</div>
+    <div style="font-size:14px;font-weight:700;color:{fg};">Module : {mod_title}</div>
+    <div style="font-size:13px;color:{fg};margin-top:2px;">{status_label}</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:11px;color:{fg};opacity:0.8;">Moyenne</div>
+    <div style="font-size:24px;font-weight:800;color:{fg};">{moy_display}{note}</div>
+  </div>
+</div>"""
+
+
+def _html_wrap(semester: str, cards_html: str, heading: str = "Nouvelles notes disponibles") -> str:
+    ts = datetime.now().strftime("%d %b %Y, %H:%M")
+    return f"""<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<div style="max-width:520px;margin:0 auto;padding:16px;">
+  <div style="background:#1e40af;border-radius:12px;padding:16px 20px;margin-bottom:16px;">
+    <div style="color:#bfdbfe;font-size:12px;margin-bottom:2px;">SchoolApp · {semester}</div>
+    <div style="color:#ffffff;font-size:20px;font-weight:700;">{heading}</div>
+    <div style="color:#93c5fd;font-size:12px;margin-top:4px;">{ts}</div>
+  </div>
+  {cards_html}
+  <div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:16px;">SchoolApp Watcher · ENSAM UMI</div>
+</div>
+</body>
+</html>"""
+
+
+# ---------- Extra watchers: absences, sanctions, official module & semester results ----------
+
+
+def _table_by_headers(html: str, wanted: set[str]) -> tuple[list[str], list[list[str]]] | None:
+    """Find the first table whose header row contains all `wanted` columns."""
+    soup = BeautifulSoup(html, "html.parser")
+    for t in soup.find_all("table"):
+        headers = [_normalize_cell(th.get_text(" ", strip=True)) for th in t.find_all("th")]
+        if wanted.issubset(set(headers)):
+            rows = []
+            for tr in t.find_all("tr"):
+                tds = [_normalize_cell(td.get_text(" ", strip=True)) for td in tr.find_all("td")]
+                if tds and any(tds):
+                    rows.append(tds)
+            return headers, rows
+    return None
+
+
+def _parse_absence_log(html: str) -> dict[str, dict[str, str]]:
+    found = _table_by_headers(html, {"Element", "Date", "Seance"})
+    if not found:
+        return {}
+    headers, rows = found
+    idx = {h: i for i, h in enumerate(headers)}
+    out: dict[str, dict[str, str]] = {}
+    for r in rows:
+        def cell(k: str) -> str:
+            i = idx.get(k)
+            return r[i] if i is not None and i < len(r) else ""
+        date = cell("Date").split(" ")[0]
+        elem = cell("Element")
+        if not elem:
+            continue
+        out[f"{elem}|{date}|{cell('Seance')}"] = {
+            "element": elem,
+            "date": date,
+            "seance": cell("Seance"),
+            "justif": cell("Justif").lower(),
+            "remarks": cell("Remarques"),
+        }
+    return out
+
+
+def _parse_sanctions(html: str) -> dict[str, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    for t in soup.find_all("table"):
+        out: dict[str, str] = {}
+        for tr in t.find_all("tr"):
+            tds = [_normalize_cell(td.get_text(" ", strip=True)) for td in tr.find_all("td")]
+            if len(tds) >= 2 and tds[0]:
+                out[tds[0]] = tds[1]
+        if out:
+            return out
+    return {}
+
+
+def _parse_modules_encours(html: str) -> dict[str, dict[str, str]]:
+    found = _table_by_headers(html, {"CodeMod", "Moy", "Dec"})
+    if not found:
+        return {}
+    headers, rows = found
+    idx = {h: i for i, h in enumerate(headers)}
+    out: dict[str, dict[str, str]] = {}
+    for r in rows:
+        def cell(k: str) -> str:
+            i = idx.get(k)
+            return r[i] if i is not None and i < len(r) else ""
+        code = cell("CodeMod")
+        if not code:
+            continue
+        out[f"{code}|{cell('AU')}"] = {"code": code, "au": cell("AU"), "moy": cell("Moy"), "dec": cell("Dec")}
+    return out
+
+
+def _parse_semester_results(html: str) -> dict[str, dict[str, str]]:
+    found = _table_by_headers(html, {"Semestre", "Moy SEM"})
+    if not found:
+        return {}
+    headers, rows = found
+    idx = {h: i for i, h in enumerate(headers)}
+    out: dict[str, dict[str, str]] = {}
+    for r in rows:
+        def cell(k: str) -> str:
+            i = idx.get(k)
+            return r[i] if i is not None and i < len(r) else ""
+        if not cell("Semestre"):
+            continue
+        out[f"{cell('Niveau')}|{cell('Semestre')}|{cell('AU')}"] = {
+            "niveau": cell("Niveau"),
+            "sem": cell("Semestre"),
+            "au": cell("AU"),
+            "moy": cell("Moy SEM"),
+            "dec": cell("Decesion") or cell("Decision"),  # site typo
+            "rank": cell("Classement"),
+            "pj": cell("PJ"),
+        }
+    return out
+
+
+def _fetch_extras(session: requests.Session, timeout: int) -> dict[str, dict | None]:
+    """Fetch the extra watched pages; None for a page means fetch failed (carry old state forward)."""
+    pages = {
+        "absences": (ABSENCE_PATH, _parse_absence_log),
+        "sanctions": (SANCTIONS_PATH, _parse_sanctions),
+        "modules": (MODS_PATH, _parse_modules_encours),
+        "semesters": (SEM_PATH, _parse_semester_results),
+    }
+    out: dict[str, dict | None] = {}
+    for key, (path, parser) in pages.items():
+        try:
+            resp = session.get(f"{SCHOOLAPP_BASE}{path}", timeout=timeout)
+            resp.raise_for_status()
+            if _looks_like_login_page(resp.text):
+                raise RuntimeError("session lost")
+            out[key] = parser(resp.text)
+        except Exception as exc:
+            log("WARNING", f"Could not fetch {path}: {exc}")
+            out[key] = None
+    return out
+
+
+def _all_titles() -> tuple[dict[str, str], dict[str, str]]:
+    """Element and module titles across both semesters."""
+    elements: dict[str, str] = {}
+    modules: dict[str, str] = {}
+    for sem in ("S3", "S4"):
+        try:
+            for m in modules_for_semester(sem):
+                modules[m.code.upper()] = m.title
+                for e in m.elements:
+                    elements[e.code.upper()] = e.title
+        except Exception:
+            pass
+    return elements, modules
+
+
+def _dec_badge(dec: str) -> tuple[str, str, str]:
+    """Color/label for an official decision code (VORD/VRAT/VRAC/NV/--)."""
+    d = (dec or "").upper().strip()
+    if d.startswith("V"):
+        return "#166534", "#dcfce7", f"✓ {d}"
+    if d == "NV":
+        return "#991b1b", "#fee2e2", "✗ NV"
+    return "#374151", "#f3f4f6", d if d and d != "--" else "En attente"
+
+
+def _simple_card(border: str, kicker_html: str, title: str, body_html: str) -> str:
+    return f"""
+<div style="background:#ffffff;border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid {border};box-shadow:0 1px 3px rgba(0,0,0,.08);">
+  <div style="font-size:13px;color:#6b7280;margin-bottom:2px;">{kicker_html}</div>
+  <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:8px;">{title}</div>
+  {body_html}
+</div>"""
+
+
+def _diff_absence_cards(old_log: dict | None, new_log: dict, old_sanc: dict | None, new_sanc: dict, element_titles: dict[str, str]) -> tuple[list[str], str | None]:
+    cards: list[str] = []
+    subject: str | None = None
+
+    if old_log is not None:
+        for key, a in new_log.items():
+            old_a = old_log.get(key)
+            title = element_titles.get(a["element"].upper(), a["element"])
+            justified = a.get("justif") == "true"
+            if old_a is None:
+                fg = "#166534" if justified else "#991b1b"
+                bg = "#dcfce7" if justified else "#fee2e2"
+                badge = "Justifiée" if justified else "Non justifiée"
+                body = (
+                    f"<div style='font-size:14px;color:#374151;'>{a['date']} · {a['seance']}</div>"
+                    f"<div style='margin-top:8px;display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:4px 12px;border-radius:20px;'>{badge}</div>"
+                )
+                if a.get("remarks"):
+                    body += f"<div style='font-size:12px;color:#6b7280;margin-top:6px;'>{a['remarks']}</div>"
+                cards.append(_simple_card(fg, f"{a['element']} · <span style='color:#dc2626;font-weight:600;'>ABSENCE</span>", title, body))
+                if subject is None:
+                    subject = f"🚨 Absence {'justifiée' if justified else 'non justifiée'} — {title}"
+            elif old_a.get("justif") != a.get("justif") and justified:
+                body = f"<div style='font-size:14px;color:#374151;'>{a['date']} · {a['seance']} — désormais justifiée</div>"
+                cards.append(_simple_card("#166534", f"{a['element']} · <span style='color:#16a34a;font-weight:600;'>ABSENCE JUSTIFIÉE</span>", title, body))
+                subject = subject or f"Absence justifiée — {title}"
+
+    if old_sanc is not None and new_sanc and new_sanc != old_sanc:
+        rows_html = "".join(
+            (
+                f"<tr><td style='color:#6b7280;font-size:12px;padding:3px 0;'>{k}</td>"
+                f"<td style='padding:3px 0;font-weight:600;'>{old_sanc.get(k, '—')} → {v}</td></tr>"
+                if old_sanc.get(k) != v
+                else f"<tr><td style='color:#6b7280;font-size:12px;padding:3px 0;'>{k}</td><td style='padding:3px 0;'>{v}</td></tr>"
+            )
+            for k, v in new_sanc.items()
+        )
+        cards.append(_simple_card(
+            "#dc2626",
+            "<span style='color:#dc2626;font-weight:600;'>SANCTIONS ABSENCES</span>",
+            new_sanc.get("Message", "Mise à jour"),
+            f"<table style='width:100%;border-collapse:collapse;'>{rows_html}</table>",
+        ))
+        subject = subject or f"⚠️ Sanction absences: {new_sanc.get('Message', 'mise à jour')}"
+
+    return cards, subject
+
+
+def _diff_module_cards(old_mods: dict | None, new_mods: dict, module_titles: dict[str, str]) -> tuple[list[str], str | None]:
+    cards: list[str] = []
+    subject: str | None = None
+    if old_mods is None:
+        return cards, subject
+    for key, m in new_mods.items():
+        o = old_mods.get(key)
+        if o == m:
+            continue
+        fg, bg, label = _dec_badge(m.get("dec", ""))
+        title = module_titles.get(m["code"].upper(), m["code"])
+        before = "" if o is None else f"<div style='font-size:12px;color:#6b7280;margin-top:6px;'>Avant: Moy {o.get('moy', '—')} · {o.get('dec', '—')}</div>"
+        body = (
+            "<table style='width:100%;border-collapse:collapse;'><tr>"
+            + _score_cell("Moyenne", m.get("moy") or "--")
+            + f"<td style='text-align:center;padding:8px 6px;'><div style='font-size:11px;color:#6b7280;margin-bottom:2px;'>Décision</div>"
+            + f"<div style='display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;'>{label}</div></td>"
+            + "</tr></table>" + before
+        )
+        cards.append(_simple_card(fg, f"{m['code']} · {m.get('au', '')} · <span style='color:#7c3aed;font-weight:600;'>RÉSULTAT MODULE OFFICIEL</span>", title, body))
+        if subject is None:
+            subject = f"Résultat module: {title} — {m.get('dec', '?')} ({m.get('moy', '?')})"
+    return cards, subject
+
+
+def _diff_semester_cards(old_sems: dict | None, new_sems: dict) -> tuple[list[str], str | None]:
+    cards: list[str] = []
+    subject: str | None = None
+    if old_sems is None:
+        return cards, subject
+    for key, sres in new_sems.items():
+        o = old_sems.get(key)
+        if o == sres:
+            continue
+        fg, bg, label = _dec_badge(sres.get("dec", ""))
+        body = (
+            "<table style='width:100%;border-collapse:collapse;'><tr>"
+            + _score_cell("Moy SEM", sres.get("moy") or "--")
+            + _score_cell("Classement", sres.get("rank") or "--")
+            + _score_cell("PJ", sres.get("pj") or "--")
+            + f"<td style='text-align:center;padding:8px 6px;'><div style='font-size:11px;color:#6b7280;margin-bottom:2px;'>Décision</div>"
+            + f"<div style='display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:3px 10px;border-radius:20px;'>{label}</div></td>"
+            + "</tr></table>"
+        )
+        cards.append(_simple_card("#1e40af", f"{sres.get('niveau', '')} {sres.get('sem', '')} · {sres.get('au', '')} · <span style='color:#1e40af;font-weight:600;'>RÉSULTAT SEMESTRE</span>", f"Semestre {sres.get('sem', '')}", body))
+        if subject is None:
+            subject = f"Résultat {sres.get('sem', '?')}: Moy {sres.get('moy', '?')} — Rang {sres.get('rank', '?')}"
+    return cards, subject
+
+
+def _build_diff_email(semester: str, old: Snapshot | None, new_snap: Snapshot) -> tuple[str, str]:
+    """Return (subject, unwrapped cards HTML) describing grade changes."""
+    from .presets import modules_for_semester
+
+    headers = new_snap.headers
+    if "CodeElem" not in headers:
+        return (
+            f"📚 New grade — SchoolApp {semester}",
+            '<p style="color:#666;text-align:center;">SchoolApp marks changed. Check the app for details.</p>',
+        )
+
+    # Build code → element title and def lookups from presets
+    try:
+        element_titles: dict[str, str] = {}
+        element_defs: dict[str, object] = {}
+        for mod in modules_for_semester(semester):
+            for el in mod.elements:
+                element_titles[el.code.upper()] = el.title
+                element_defs[el.code.upper()] = el
+    except Exception:
+        element_titles = {}
+        element_defs = {}
+
+    def label(code: str) -> str:
+        title = element_titles.get(code.upper())
+        return f"{code} — {title}" if title else code
+
+    def fmt_status(dec: str) -> str:
+        if dec == "VORD":
+            return "✓ Validé"
+        if dec in ("NV", ""):
+            return "✗ Non validé"
+        if dec == "RAT":
+            return "~ Rattrapage"
+        return dec
+
+    idx = {h: i for i, h in enumerate(headers)}
+
+    def get(row: list[str], key: str) -> str:
+        i = idx.get(key)
+        if i is None or i >= len(row):
+            return "--"
+        v = row[i].strip()
+        return v if v else "--"
+
+    old_by_code: dict[str, list[str]] = {}
+    if old and "CodeElem" in (old.headers or []):
+        old_idx = {h: i for i, h in enumerate(old.headers)}
+        ci = old_idx.get("CodeElem", 0)
+        for r in old.rows:
+            if len(r) > ci and r[ci].strip():
+                old_by_code[r[ci].strip()] = r
+
+    new_by_code: dict[str, list[str]] = {}
+    ci = idx.get("CodeElem", 0)
+    for r in new_snap.rows:
+        if len(r) > ci and r[ci].strip():
+            new_by_code[r[ci].strip()] = r
+
+    # Build element → module mapping
+    try:
+        all_modules = modules_for_semester(semester)
+    except Exception:
+        all_modules = []
+    elem_to_mod: dict[str, object] = {}
+    for mod in all_modules:
+        for el in mod.elements:
+            elem_to_mod[el.code.upper()] = mod
+
+    # Collect changed element cards grouped by module
+    from collections import defaultdict
+    changed_by_mod: dict[str, list[str]] = defaultdict(list)  # mod_code → element cards
+    affected_names: list[str] = []
+
+    for code, row in new_by_code.items():
+        cc = get(row, "CC")
+        ex = get(row, "EX")
+        tp = get(row, "TP")
+        moy = get(row, "Moy")
+        title = element_titles.get(code.upper(), code)
+        if moy == "--":
+            moy = _compute_moy(code, cc, ex, tp, element_defs)
+
+        mod = elem_to_mod.get(code.upper())
+        if mod is None and all_modules and not any(code.upper().startswith(m.code.upper()) for m in all_modules):
+            continue
+        mod_code = mod.code if mod else "OTHER"
+
+        if code not in old_by_code:
+            affected_names.append(title)
+            changed_by_mod[mod_code].append(_card_new(code, title, cc, ex, tp, moy))
+        else:
+            old_row = old_by_code[code]
+            old_snap_idx = {h: i for i, h in enumerate(old.headers)} if old else idx
+            def get_old(key: str) -> str:
+                i = old_snap_idx.get(key)
+                if i is None or i >= len(old_row):
+                    return "--"
+                v = old_row[i].strip()
+                return v if v else "--"
+
+            diffs: dict[str, tuple[str, str]] = {}
+            for field in ("CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy", "Dec"):
+                old_val = get_old(field)
+                new_val = get(row, field)
+                if old_val != new_val and not (old_val == "--" and new_val == "--"):
+                    diffs[field] = (old_val, new_val)
+            if diffs:
+                affected_names.append(title)
+                changed_by_mod[mod_code].append(_card_updated(code, title, cc, ex, tp, moy, diffs))
+
+    # Build final HTML: element cards + module summary per affected module
+    mod_by_code = {mod.code: mod for mod in all_modules}
+    sections: list[str] = []
+    for mod_code, elem_cards in changed_by_mod.items():
+        sections.extend(elem_cards)
+        mod = mod_by_code.get(mod_code)
+        if mod is not None:
+            mod_moy, _ = _compute_module_moy(mod, new_by_code, idx, element_defs)
+            sections.append(_module_summary_card(mod.title, mod.code, mod_moy, mod.seuil))
+
+    names_str = ", ".join(affected_names[:2]) if affected_names else semester
+    if len(affected_names) > 2:
+        names_str += f" +{len(affected_names) - 2} more"
+    subject = f"📚 {names_str} — SchoolApp {semester}"
+
+    if not sections:
+        return subject, '<p style="color:#666;text-align:center;">Something changed but could not pinpoint the diff. Check the app.</p>'
+
+    return subject, "\n".join(sections)
+
+
+def _tg_grade_section(semester: str, old: Snapshot | None, new_snap: Snapshot) -> str | None:
+    from .presets import modules_for_semester
+
+    headers = new_snap.headers
+    if "CodeElem" not in headers:
+        return None
+
+    try:
+        element_titles: dict[str, str] = {}
+        element_defs: dict[str, object] = {}
+        for mod in modules_for_semester(semester):
+            for el in mod.elements:
+                element_titles[el.code.upper()] = el.title
+                element_defs[el.code.upper()] = el
+    except Exception:
+        element_titles = {}
+        element_defs = {}
+
+    idx = {h: i for i, h in enumerate(headers)}
+    ci = idx.get("CodeElem", 0)
+
+    def getv(row: list[str], hmap: dict[str, int], key: str) -> str:
+        i = hmap.get(key)
+        if i is None or i >= len(row):
+            return "--"
+        v = row[i].strip()
+        return v if v else "--"
+
+    old_by_code: dict[str, list[str]] = {}
+    old_idx: dict[str, int] = {}
+    if old and "CodeElem" in (old.headers or []):
+        old_idx = {h: i for i, h in enumerate(old.headers)}
+        oci = old_idx.get("CodeElem", 0)
+        for r in old.rows:
+            if len(r) > oci and r[oci].strip():
+                old_by_code[r[oci].strip()] = r
+
+    new_by_code: dict[str, list[str]] = {}
+    for r in new_snap.rows:
+        if len(r) > ci and r[ci].strip():
+            new_by_code[r[ci].strip()] = r
+
+    try:
+        all_mods = modules_for_semester(semester)
+    except Exception:
+        all_mods = []
+
+    elem_to_mod = {el.code.upper(): mod for mod in all_mods for el in mod.elements}
+    mod_by_code = {mod.code: mod for mod in all_mods}
+
+    changed_by_mod: dict[str, list[tuple]] = {}
+    for code, row in new_by_code.items():
+        mod = elem_to_mod.get(code.upper())
+        if not mod and all_mods and not any(code.upper().startswith(m.code.upper()) for m in all_mods):
+            continue
+        mod_code = mod.code if mod else "OTHER"
+
+        cc = getv(row, idx, "CC")
+        ex = getv(row, idx, "EX")
+        tp = getv(row, idx, "TP")
+        moy = getv(row, idx, "Moy")
+        title = element_titles.get(code.upper(), code)
+        if moy == "--":
+            moy = _compute_moy(code, cc, ex, tp, element_defs)
+
+        if code not in old_by_code:
+            changed_by_mod.setdefault(mod_code, []).append((code, title, cc, ex, tp, moy, "new", {}))
+        else:
+            old_row = old_by_code[code]
+            diffs = {}
+            for field in ("CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy"):
+                ov = getv(old_row, old_idx, field)
+                nv = getv(row, idx, field)
+                if ov != nv and not (ov == "--" and nv == "--"):
+                    diffs[field] = (ov, nv)
+            if diffs:
+                changed_by_mod.setdefault(mod_code, []).append((code, title, cc, ex, tp, moy, "updated", diffs))
+
+    if not changed_by_mod:
+        return None
+
+    lines = [f"📚 <b>Nouvelles notes — {semester}</b>"]
+    for mod_code, elements in changed_by_mod.items():
+        mod = mod_by_code.get(mod_code)
+        if mod:
+            lines.append(f"\n📦 <b>{mod_code}</b> — {mod.title}")
+        for code, title, cc, ex, tp, moy, kind, diffs in elements:
+            icon = "✅" if _is_validated(moy) else "❌" if moy not in ("--", "") else "⏳"
+            kind_str = "NOUVEAU" if kind == "new" else "MODIFIÉ"
+            lines.append(f"\n<b>{code}</b> — {title}  <i>({kind_str})</i>")
+            lines.append(f"CC: {cc} · EX: {ex} · TP: {tp}")
+            lines.append(f"Moy: <b>{moy}</b>  {icon}")
+            if diffs:
+                diff_parts = [f"{k}: {ov}→{nv}" for k, (ov, nv) in list(diffs.items())[:3]]
+                lines.append(f"<i>{' · '.join(diff_parts)}</i>")
+        if mod:
+            mod_moy, _ = _compute_module_moy(mod, new_by_code, idx, element_defs)
+            mod_icon = "✅" if _is_validated(mod_moy) else "❌" if mod_moy not in ("--", "") else "⏳"
+            lines.append(f"→ Moy. module: <b>{mod_moy}</b>  {mod_icon}")
+
+    return "\n".join(lines)
+
+
+def _tg_absence_section(
+    new_abs: dict,
+    old_abs: dict | None,
+    new_sanc: dict,
+    old_sanc: dict | None,
+    el_titles: dict[str, str],
+) -> str | None:
+    lines: list[str] = []
+    if old_abs is not None:
+        for key, a in new_abs.items():
+            justified = a.get("justif") == "true"
+            title = el_titles.get((a.get("element") or "").upper(), a.get("element", "?"))
+            if key not in old_abs:
+                icon = "✅" if justified else "🚨"
+                badge = "Justifiée" if justified else "Non justifiée"
+                lines.append(f"{icon} <b>Absence {badge}</b>")
+                lines.append(f"<b>{a.get('element', '?')}</b> — {title}")
+                lines.append(f"📅 {a.get('date', '?')} · {a.get('seance', '?')}")
+            elif old_abs[key].get("justif") != a.get("justif") and justified:
+                lines.append("✅ <b>Absence justifiée</b>")
+                lines.append(f"<b>{a.get('element', '?')}</b> — {title}")
+
+    if old_sanc is not None and new_sanc and new_sanc != old_sanc:
+        if lines:
+            lines.append("")
+        lines.append("⚠️ <b>Sanctions mises à jour</b>")
+        for k, v in new_sanc.items():
+            if old_sanc.get(k) != v:
+                lines.append(f"{k}: {old_sanc.get(k, '—')} → {v}")
+
+    return "\n".join(lines) if lines else None
+
+
+def _tg_module_section(new_mods: dict, old_mods: dict | None, mod_titles: dict) -> str | None:
+    if old_mods is None:
+        return None
+    lines: list[str] = []
+    for key, m in new_mods.items():
+        if old_mods.get(key) == m:
+            continue
+        dec = (m.get("dec") or "").upper()
+        icon = "✅" if dec.startswith("V") else "❌" if dec == "NV" else "⏳"
+        title = mod_titles.get((m.get("code") or "").upper(), m.get("code", "?"))
+        lines.append(f"📋 <b>Résultat module officiel</b>")
+        lines.append(f"<b>{m.get('code', '?')}</b> — {title}")
+        lines.append(f"Moy: <b>{m.get('moy', '--')}</b>  {icon} {dec or '--'}")
+    return "\n".join(lines) if lines else None
+
+
+def _tg_semester_section(new_sems: dict, old_sems: dict | None) -> str | None:
+    if old_sems is None:
+        return None
+    lines: list[str] = []
+    for key, s in new_sems.items():
+        if old_sems.get(key) == s:
+            continue
+        dec = (s.get("dec") or "").upper()
+        icon = "✅" if dec.startswith("V") else "❌" if dec == "NV" else "⏳"
+        lines.append(f"🎓 <b>Résultat semestre</b>")
+        lines.append(f"{s.get('niveau', '')} {s.get('sem', '')} · {s.get('au', '')}")
+        lines.append(f"Moy: <b>{s.get('moy', '--')}</b>  Rang: <b>{s.get('rank', '--')}</b>")
+        lines.append(f"{icon} {dec or '--'}")
+    return "\n".join(lines) if lines else None
+
+
+def _login(session: requests.Session, *, email: str, password: str, timeout: int) -> None:
     login_url = f"{SCHOOLAPP_BASE}{LOGIN_PATH}"
-    marks_url = f"{SCHOOLAPP_BASE}{MARKS_PATH}"
-
     r = session.get(login_url, timeout=timeout)
     log("INFO", f"GET {login_url}")
     r.raise_for_status()
-    log("SUCCESS", "Fetched login page")
 
     csrf = _extract_csrf(r.text)
     if not csrf:
@@ -333,32 +1116,143 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
     posted.raise_for_status()
     log("SUCCESS", "Authentication POST completed")
 
+
+def check_once(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, notify_email: bool, config: dict | None, notify_telegram: bool = False, session: requests.Session | None = None) -> int:
+    if session is None:
+        session = requests.Session()
+        session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+
+    marks_url = f"{SCHOOLAPP_BASE}{MARKS_PATH}"
+
     log("INFO", f"GET {marks_url}")
     page = session.get(marks_url, timeout=timeout)
     page.raise_for_status()
-    log("SUCCESS", "Fetched marks page")
 
     if _looks_like_login_page(page.text):
-        raise RuntimeError("Login failed: verify email/password")
+        log("INFO", "Session expired or fresh — authenticating")
+        _login(session, email=email, password=password, timeout=timeout)
+        page = session.get(marks_url, timeout=timeout)
+        page.raise_for_status()
+        if _looks_like_login_page(page.text):
+            raise RuntimeError("Login failed: verify email/password")
+    log("SUCCESS", "Fetched marks page")
 
     headers, rows = _extract_table(page.text)
-    snap = Snapshot(headers=headers, rows=rows, fingerprint=_fingerprint(headers, rows))
 
     path = _snapshot_path(semester, state_file)
     old = _load_snapshot(path)
-    changed = old is None or old.fingerprint != snap.fingerprint
+    grades_changed = old is None or _marks_state(old.headers, old.rows, semester) != _marks_state(headers, rows, semester)
+
+    # Extra pages: absences, sanctions, official module & semester results
+    extras_old = old.extras if old and isinstance(old.extras, dict) else {}
+    fetched = _fetch_extras(session, timeout)
+    extras_new: dict[str, dict | None] = {}
+    for key, value in fetched.items():
+        extras_new[key] = extras_old.get(key) if value is None else value
+
+    el_titles, mod_titles = _all_titles()
+    abs_cards, abs_subj = _diff_absence_cards(
+        extras_old.get("absences"), extras_new.get("absences") or {},
+        extras_old.get("sanctions"), extras_new.get("sanctions") or {},
+        el_titles,
+    )
+    mod_cards, mod_subj = _diff_module_cards(extras_old.get("modules"), extras_new.get("modules") or {}, mod_titles)
+    sem_cards, sem_subj = _diff_semester_cards(extras_old.get("semesters"), extras_new.get("semesters") or {})
+    extra_cards = abs_cards + mod_cards + sem_cards
+
+    snap = Snapshot(headers=headers, rows=rows, fingerprint=_fingerprint(headers, rows), extras=extras_new)
     _save_snapshot(path, snap)
 
+    changed = grades_changed or bool(extra_cards)
+
     if changed:
-        log("SUCCESS", f"Change detected for {semester}. Snapshot updated at {path}")
-        _render_table(headers, rows, semester)
+        if grades_changed:
+            log("SUCCESS", f"Grade change detected for {semester}. Snapshot updated at {path}")
+            _render_table(headers, rows, semester)
+        if abs_cards:
+            log("SUCCESS", f"Absence/sanction update detected ({len(abs_cards)} item(s))")
+        if mod_cards:
+            log("SUCCESS", f"Official module result update detected ({len(mod_cards)} item(s))")
+        if sem_cards:
+            log("SUCCESS", f"Semester result update detected ({len(sem_cards)} item(s))")
+
         if notify_email:
+            sections: list[str] = []
+            subjects: list[str] = []
+            if grades_changed:
+                g_subj, g_cards = _build_diff_email(semester, old, snap)
+                sections.append(g_cards)
+                subjects.append(g_subj)
+            for subj, cards in ((abs_subj, abs_cards), (mod_subj, mod_cards), (sem_subj, sem_cards)):
+                if cards:
+                    sections.append("\n".join(cards))
+                    if subj:
+                        subjects.append(subj)
+            subject = subjects[0] if subjects else f"SchoolApp {semester} — mise à jour"
+            if len(subjects) > 1:
+                subject += f" (+{len(subjects) - 1})"
+            heading = "Nouvelles notes disponibles" if grades_changed else "Mises à jour SchoolApp"
+            html = _html_wrap(semester, "\n".join(sections), heading=heading)
             send_email(
-                subject=f"SchoolApp update detected ({semester})",
-                body=f"SchoolApp marks changed for {semester}.",
+                subject=subject,
+                body=f"SchoolApp {semester} update. Open in an HTML email viewer to see details.",
+                html=html,
                 config=config,
             )
             log("SUCCESS", "Email notification sent")
+
+        if notify_telegram:
+            tg_parts: list[str] = []
+            if grades_changed:
+                s = _tg_grade_section(semester, old, snap)
+                if s:
+                    tg_parts.append(s)
+            if abs_cards:
+                s = _tg_absence_section(
+                    extras_new.get("absences") or {},
+                    extras_old.get("absences"),
+                    extras_new.get("sanctions") or {},
+                    extras_old.get("sanctions"),
+                    el_titles,
+                )
+                if s:
+                    tg_parts.append(s)
+            if mod_cards:
+                s = _tg_module_section(extras_new.get("modules") or {}, extras_old.get("modules"), mod_titles)
+                if s:
+                    tg_parts.append(s)
+            if sem_cards:
+                s = _tg_semester_section(extras_new.get("semesters") or {}, extras_old.get("semesters"))
+                if s:
+                    tg_parts.append(s)
+            if tg_parts:
+                try:
+                    from .telegram_notifier import send_telegram
+                    send_telegram("\n\n".join(tg_parts), config=config)
+                    log("SUCCESS", "Telegram notification sent")
+                except Exception as exc:
+                    log("WARNING", f"Telegram notification failed: {exc}")
+
+        hist_path = _history_path(semester, state_file)
+        if grades_changed:
+            _append_history(hist_path, {
+                "ts": datetime.now().isoformat(timespec="seconds"),
+                "type": "grades",
+                "semester": semester,
+                "summary": f"Notes mises à jour — {semester}",
+            })
+        for _htype, _hcards, _hsubj in [
+            ("absences", abs_cards, abs_subj),
+            ("modules", mod_cards, mod_subj),
+            ("semesters", sem_cards, sem_subj),
+        ]:
+            if _hcards:
+                _append_history(hist_path, {
+                    "ts": datetime.now().isoformat(timespec="seconds"),
+                    "type": _htype,
+                    "semester": semester,
+                    "summary": _hsubj or f"{_htype.title()} update",
+                })
     else:
         log("INFO", f"No change detected for {semester}")
 
@@ -540,8 +1434,45 @@ def fetch_element_details(*, email: str, password: str, timeout: int, element_co
     return details if details.get("stats") else None
 
 
-def watch_loop(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, interval: int, notify_email: bool, config: dict | None) -> int:
-    log("INFO", f"Watching {semester} every {interval}s")
+SLOW_WINDOW = (4, 6)  # local hours with reduced polling
+SLOW_INTERVAL = 1800
+ALERT_AFTER_SECONDS = 3600
+
+
+def _scheduled_interval(fast: int) -> float:
+    """Fast interval all day; slow between 04:00 and 06:00 local, with jitter."""
+    base = SLOW_INTERVAL if SLOW_WINDOW[0] <= datetime.now().hour < SLOW_WINDOW[1] else fast
+    return max(30.0, base + random.uniform(-30, 30))
+
+
+def _try_notify(config: dict | None, enabled: bool, subject: str, text: str, notify_telegram: bool = False) -> bool:
+    sent = False
+    if enabled:
+        try:
+            send_email(subject=subject, body=text, html=f"<p>{text}</p>", config=config)
+            sent = True
+        except Exception as exc:
+            log("WARNING", f"Could not send alert email: {exc}")
+    if notify_telegram:
+        try:
+            from .telegram_notifier import send_telegram
+            send_telegram(f"<b>{subject}</b>\n{text}", config=config)
+            sent = True
+        except Exception as exc:
+            log("WARNING", f"Could not send Telegram alert: {exc}")
+    return sent
+
+
+def watch_loop(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, interval: int, notify_email: bool, config: dict | None, notify_telegram: bool = False) -> int:
+    log("INFO", f"Watching {semester}: every {interval}s (every {SLOW_INTERVAL // 60} min between {SLOW_WINDOW[0]:02d}:00-{SLOW_WINDOW[1]:02d}:00)")
+    session = requests.Session()
+    session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+
+    failures = 0
+    first_failure: float | None = None
+    alerted = False
+    last_error = ""
+
     try:
         while True:
             try:
@@ -552,13 +1483,39 @@ def watch_loop(*, email: str, password: str, timeout: int, semester: str, state_
                     semester=semester,
                     state_file=state_file,
                     notify_email=notify_email,
+                    notify_telegram=notify_telegram,
                     config=config,
+                    session=session,
                 )
+                if alerted:
+                    _try_notify(config, notify_email, "✅ SchoolApp watcher recovered", "Grade checks are succeeding again.", notify_telegram=notify_telegram)
+                failures = 0
+                first_failure = None
+                alerted = False
             except requests.RequestException as exc:
-                log("WARNING", f"Network error: {exc}")
+                failures += 1
+                first_failure = first_failure or time.time()
+                last_error = str(exc)
+                log("WARNING", f"Network error ({failures} consecutive): {exc}")
             except Exception as exc:
-                log("ERROR", str(exc))
-            time.sleep(interval)
+                failures += 1
+                first_failure = first_failure or time.time()
+                last_error = str(exc)
+                log("ERROR", f"Check failed ({failures} consecutive): {exc}")
+
+            if failures and not alerted and first_failure and time.time() - first_failure >= ALERT_AFTER_SECONDS:
+                alerted = _try_notify(
+                    config,
+                    notify_email,
+                    "⚠️ SchoolApp watcher is failing",
+                    f"Grade checks have been failing for over an hour ({failures} attempts). Last error: {last_error}",
+                    notify_telegram=notify_telegram,
+                )
+
+            sleep_s = _scheduled_interval(interval)
+            if failures:
+                sleep_s = max(sleep_s, min(interval * 2 ** min(failures, 5), 1800.0))
+            time.sleep(sleep_s)
     except KeyboardInterrupt:
         console.print(Panel.fit("Stopped watch mode"))
         return 0

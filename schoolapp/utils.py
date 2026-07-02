@@ -69,21 +69,92 @@ def log(level: str, message: str) -> None:
     console.print(f"[dim][{stamp}][/dim] [{color}]{level_up}[/{color}] {message}")
 
 
+def _create_env_from_example_in_dir(base_dir: Path) -> bool:
+    """If `.env` is missing and `.env.example` exists, copy the example.
+
+    Returns True if a file was created, False otherwise.
+    """
+    try:
+        env = base_dir / ".env"
+        example = base_dir / ".env.example"
+        if env.exists() or not example.exists():
+            return False
+        env.write_bytes(example.read_bytes())
+        try:
+            env.chmod(0o600)
+        except Exception:
+            pass
+        console.print(f"[yellow]Created {env} from {example}[/yellow]")
+        return True
+    except Exception:
+        console.print(f"[red]Failed to create .env from .env.example in {base_dir}[/red]")
+        return False
+
+
 def load_env_file(path: str | None) -> None:
-    if not path:
-        return
-    env_path = Path(path)
-    if not env_path.exists():
-        return
-    for raw in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    """Load KEY=VALUE lines into `os.environ` without overriding existing env.
+
+    If `path` is provided, attempt to load that file. If `path` is None, the
+    function will try to auto-discover an env file by checking the current
+    working directory for `.env` then `.env.example`, and also probing the
+    project/package root for the same files. Before loading, if `.env` is
+    missing but `.env.example` exists the function will create `.env` by
+    copying the example (permissions attempted to be set to 0o600).
+    The first existing file found is loaded.
+    """
+    candidates: list[Path] = []
+    project_root: Path | None = None
+
+    if path:
+        candidates.append(Path(path))
+    else:
+        # Try copying from .env.example in current working dir first
+        try:
+            _create_env_from_example_in_dir(Path.cwd())
+        except Exception:
+            pass
+
+        # Prefer local .env, then .env.example in the current working dir
+        candidates.append(Path(".env"))
+        candidates.append(Path(".env.example"))
+
+        # Also check the package/project tree for a .env / .env.example
+        try:
+            pkg_root = Path(__file__).resolve().parent
+            for parent in [pkg_root, *pkg_root.parents]:
+                if (parent / "pyproject.toml").exists() or (parent / "setup.py").exists():
+                    project_root = parent
+                    candidates.append(parent / ".env")
+                    candidates.append(parent / ".env.example")
+                    break
+            else:
+                project_root = pkg_root
+                candidates.append(pkg_root / ".env")
+                candidates.append(pkg_root / ".env.example")
+        except Exception:
+            project_root = None
+
+        # Also try copying from .env.example in the project root
+        if project_root is not None:
+            try:
+                _create_env_from_example_in_dir(project_root)
+            except Exception:
+                pass
+
+    for env_path in candidates:
+        if not env_path or not env_path.exists():
             continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-        if key and key not in os.environ:
-            os.environ[key] = value
+        for raw in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+        # Stop after loading the first valid env file
+        return
 
 
 def _read_toml(path: Path) -> dict[str, Any]:
