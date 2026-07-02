@@ -29,8 +29,14 @@ from .watcher import _append_history, _history_path, run_health_check
 app = typer.Typer(
     name="schoolapp",
     no_args_is_help=True,
-    help="ENSAM SchoolApp CLI with semester namespaces (s3, s4)",
-    epilog="Examples: schoolapp s3 calc | schoolapp s4 list | schoolapp s3 watch --once",
+    help=(
+        "ENSAM SchoolApp toolkit - one front-end over the shared library, state "
+        "store and API.\n\n"
+        "Fetch (profile, fetch-all, export, catalog crawl) writes the store; "
+        "serve exposes that same store over the API the plasmoid/Android app read; "
+        "status shows what it would serve. s3/s4 are the per-semester namespaces."
+    ),
+    epilog="Examples: schoolapp fetch-all | schoolapp serve | schoolapp s4 watch --once",
 )
 
 app.add_typer(s3_app, name="s3", help="Semester S3 namespace")
@@ -217,20 +223,18 @@ def export_cmd(
     client = _library_client(ctx, email, password, timeout)
     data = client.fetch_all(include_history=True, include_stats=stats)
 
+    # Same layout as the store (and /api/export?format=zip): student/all.json,
+    # student/<resource>.json, documents/<file>.pdf - so a CLI export and an API
+    # export are interchangeable.
     out_dir = Path(out).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
-    store.save_resource("all", data, source="export", directory=out_dir)
-    for attr, name in RESOURCE_FILES.items():
-        store.save_resource(name.split("/")[-1], getattr(data, attr),
-                            source="export", directory=out_dir)
+    store.save_student_data(data, source="export", directory=out_dir)
 
     if with_documents:
-        docs_dir = out_dir / "documents"
-        docs_dir.mkdir(exist_ok=True)
         for doc in data.documents:
             try:
                 content = client.download(doc)
-                (docs_dir / doc.filename).write_bytes(content)
+                store.save_document(doc.filename, content, directory=out_dir)
                 store.save_document(doc.filename, content)  # also cache for /api/documents/<kind>
                 log("INFO", f"downloaded {doc.filename}")
             except Exception as exc:  # noqa: BLE001 - one bad PDF must not kill the export
@@ -239,6 +243,58 @@ def export_cmd(
     console.print(f"Exported to {out_dir}")
     for name, err in data.errors.items():
         console.print(f"[red]{name}: {err}[/red]")
+
+
+STORE_RESOURCES = ["student/all", *RESOURCE_FILES.values(), "catalog/modules", "catalog/filieres"]
+
+
+@app.command("status")
+def status_cmd() -> None:
+    """Show what the API would serve: per-resource freshness from the local store.
+
+    This is the CLI mirror of `/api/status`'s `resources` map - no network, no auth."""
+    from .utils import console
+
+    fresh = store.freshness(STORE_RESOURCES)
+    table = Table(title=f"State store: {store.state_dir()}", header_style="bold magenta")
+    table.add_column("Resource")
+    table.add_column("Fetched at (UTC)")
+    for name in STORE_RESOURCES:
+        ts = fresh.get(name)
+        table.add_row(name, ts or "[dim]- not cached[/dim]")
+    console.print(table)
+    if not any(fresh.values()):
+        console.print("[yellow]Store is empty - run `schoolapp fetch-all` or the watcher first.[/yellow]")
+
+
+@app.command("serve")
+def serve_cmd(
+    ctx: typer.Context,
+    host: str = typer.Option("0.0.0.0", help="Bind address"),
+    port: int = typer.Option(8787, help="Port"),
+    threads: int = typer.Option(4, min=1, help="waitress worker threads"),
+    reload: bool = typer.Option(False, "--reload", help="Use Flask's dev server (autoreload) instead of waitress"),
+) -> None:
+    """Serve the read-through API over the same store the watcher writes.
+
+    Reads credentials/API_KEY from the env already loaded by --env-file/--config,
+    so `schoolapp --env-file .env serve` is the one-liner the plasmoid/app point at."""
+    import os
+
+    from .api import app as flask_app
+    from .utils import console
+
+    if not os.environ.get("API_KEY"):
+        log("WARNING", "API_KEY is not set - every endpoint is unauthenticated")
+    console.print(
+        f"[green]SchoolApp API[/green] -> http://{host}:{port}  "
+        f"(serving {store.state_dir()})"
+    )
+    if reload:
+        flask_app.run(host=host, port=port, debug=True)
+    else:
+        from waitress import serve as waitress_serve
+        waitress_serve(flask_app, host=host, port=port, threads=threads)
 
 
 @catalog_app.command("crawl")
