@@ -229,3 +229,30 @@ def test_csv_unknown_resource_and_empty_store(tmp_path, monkeypatch):
     assert bad.exit_code == 2 and "Unknown resource" in bad.output
     empty = runner.invoke(app, ["csv", "grades"])
     assert empty.exit_code == 1
+
+
+class _PromoClient:
+    NOTES = [20.0, 15.5, 15.5, 12.0, 8.0]  # 5 anonymized students, one element
+
+    def element_grades(self, history=False):
+        from schoolapp.models import ElementGrade
+        return [ElementGrade(code="API421", au="2025-2026")]
+
+    def rank_for_note(self, code, eval_kind, au, note):
+        n = float(note)
+        return 1 + sum(1 for x in self.NOTES if x > n), len(self.NOTES)
+
+
+def test_promo_reconstructs_whole_promotion(tmp_path, monkeypatch):
+    import csv as _csv
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: _PromoClient())
+    out = tmp_path / "promo.csv"
+    result = runner.invoke(app, ["-q", "promo", "API421", "--eval", "moy", "--out", str(out)])
+    assert result.exit_code == 0
+    rows = list(_csv.DictReader(out.open()))
+    assert len(rows) == 5                       # every student recovered
+    assert all(r["eval"] == "MoyElem" for r in rows)
+    assert [r["note"] for r in rows] == ["20.00", "15.50", "15.50", "12.00", "8.00"]
+    assert [r["rank"] for r in rows] == ["1", "2", "3", "4", "5"]
+    assert store.load_resource("promo/api421") is not None   # cached for reuse

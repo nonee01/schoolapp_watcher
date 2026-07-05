@@ -121,3 +121,11 @@ def test_csv_export_endpoint(client, monkeypatch):
     assert client.get("/api/csv/nope").status_code == 404
     monkeypatch.setenv("API_KEY", "sekrit")
     assert client.get("/api/csv/grades").status_code == 401
+
+
+def test_promo_endpoint_reads_cache(client):
+    store.save_resource("promo/api421", {"NoteRAT": [[14.5, 1], [20.0, 2]]}, source="promo")
+    r = client.get("/api/promo/API421")
+    assert r.status_code == 200
+    assert r.get_json()["promo"]["NoteRAT"] == [[14.5, 1], [20.0, 2]]
+    assert client.get("/api/promo/ZZZ999").status_code == 404

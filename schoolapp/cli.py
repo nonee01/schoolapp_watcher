@@ -377,6 +377,72 @@ def csv_cmd(
         typer.echo(text, nl=False)
 
 
+@app.command("promo", rich_help_panel="Live (portal login)")
+def promo_cmd(
+    ctx: typer.Context,
+    code: str = typer.Argument(..., help="Element code, e.g. API421"),
+    eval: str = typer.Option("rat,moy,ex,cc", "--eval",
+        help="Comma list of evaluations: rat,moy,ex,cc,tp"),
+    au: str | None = typer.Option(None, "--au",
+        help="Année universitaire (default: the element's latest)"),
+    out: str | None = typer.Option(None, "--out", "-o", help="Write CSV to FILE (else stdout)"),
+    resolution: float = typer.Option(0.01, help="Note granularity to resolve"),
+    min_interval: float = typer.Option(0.25, min=0.0,
+        help="Seconds between requests — be polite to the school server"),
+    email: str | None = typer.Option(None, help="SchoolApp email"),
+    password: str | None = typer.Option(None, help="SchoolApp password"),
+    timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
+) -> None:
+    """Reconstruct the WHOLE promotion's notes for an element (anonymized) as CSV.
+
+    The portal never exposes other students' names — but its stats endpoint
+    answers rank(note) for any hypothetical note, so sweeping that recovers every
+    grade in the promotion. Fires many rate-limited requests: expect a few minutes
+    per evaluation."""
+    from . import promo as promo_mod
+
+    code = code.upper()
+    client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
+    if not au:
+        target = next((g for g in client.element_grades() if g.code.upper() == code), None)
+        au = target.au if target else None
+    if not au:
+        err_console.print(render.error_panel(
+            f"Could not resolve the année universitaire for {code}.",
+            hint="Pass --au 2025-2026 explicitly."))
+        raise typer.Exit(code=1)
+
+    rows: list[dict] = []
+    cached: dict[str, list] = {}
+    for ev in (_split_csv(eval) or ["rat", "moy", "ex", "cc"]):
+        first = client.rank_for_note(code, ev, au, 20)
+        if not first:
+            log("WARNING", f"{ev.upper()} unavailable for {code} — skipping")
+            continue
+        effectif = first[1]
+        label = promo_mod.EVAL_LABELS.get(ev.strip().lower(), ev)
+        with err_console.status(f"Reconstructing {code} · {label} — {effectif} students…"):
+            steps = promo_mod.reconstruct(
+                lambda n, e=ev: (client.rank_for_note(code, e, au, n) or (1, effectif))[0],
+                resolution=resolution)
+        ev_rows = promo_mod.expand_to_rows(code, label, steps)
+        log("SUCCESS", f"{label}: recovered {len(ev_rows)}/{effectif} notes")
+        rows.extend(ev_rows)
+        cached[label] = [[n, c] for n, c in steps]
+
+    if not rows:
+        err_console.print(render.error_panel(f"No promotion data reconstructed for {code}."))
+        raise typer.Exit(code=1)
+
+    store.save_resource(f"promo/{code.lower()}", cached, source="promo")
+    text = csvout.rows_to_csv(rows, columns=["element", "eval", "rank", "note"])
+    if out:
+        Path(out).expanduser().write_text(text, encoding="utf-8")
+        log("SUCCESS", f"Wrote {len(rows)} note(s) → {out}")
+    else:
+        typer.echo(text, nl=False)
+
+
 @app.command("explain", rich_help_panel="Read (offline · store)")
 def explain(
     code: str = typer.Argument(..., help="Element code, e.g. API421"),

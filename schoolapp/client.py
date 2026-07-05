@@ -58,6 +58,13 @@ CATALOG_PATH = "/plan-etudes-view/modules"
 FILIERES_PATH = "/plan-etudes-view/filieres"
 
 
+def _as_int(value: str | None) -> int | None:
+    try:
+        return int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return None
+
+
 def extract_csrf(html: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
     token = soup.select_one('input[name="_csrf"]')
@@ -186,6 +193,25 @@ class SchoolAppClient:
         "rat": "NoteRAT", "noterat": "NoteRAT",
         "moy": "MoyElem", "moyelem": "MoyElem", "moyenne": "MoyElem",
     }
+
+    def rank_for_note(self, code: str, eval_kind: str, au: str,
+                      note: float | str) -> tuple[int, int] | None:
+        """One probe of the promo-stats endpoint with a HYPOTHETICAL note.
+        Returns (rank, effectif) where rank = 1 + #students strictly above `note`,
+        or None if the eval is unavailable for this element. Basis of the
+        promotion-distribution reconstruction (see promo.reconstruct)."""
+        eval_param = self._EVAL_ALIASES.get(eval_kind.strip().lower(), eval_kind)
+        html = self._get(STATS_PATH, eval=eval_param, codeelem=code.upper(),
+                         au=au, note=str(note))
+        stat = parse_mark_statistics(html, element=code.upper(), eval_kind=eval_param,
+                                     au=au, note=str(note))
+        if not stat:
+            return None
+        d = {r[0]: r[1] for r in stat.rows if len(r) >= 2}
+        rank, effectif = _as_int(d.get("Votre classement")), _as_int(d.get("Effectif"))
+        if rank is None or effectif is None:
+            return None
+        return rank, effectif
 
     def mark_statistics(self, code: str, eval_kind: str = "all") -> list[MarkStatistics]:
         grades = parse_element_grades(self._get(ELEMENTS_PATH))
