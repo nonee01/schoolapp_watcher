@@ -37,20 +37,48 @@ If `schoolapp` is not found, ensure your user bin path is in `PATH`.
 ## CLI Layout
 
 ```text
-schoolapp s3 list
-schoolapp s3 calc
-schoolapp s3 watch
+schoolapp                     # dashboard: profile, latest results, freshness, recent changes
+schoolapp dashboard           # …the same, explicitly
+schoolapp changes             # change history - the same feed the email digests narrate
+schoolapp explain API421      # règlement walkthrough for one element (SO/SR/decision + articles)
+schoolapp csv grades -o m.csv # export marks/rankings as CSV for a spreadsheet
+schoolapp show grades         # offline view of any cached resource (mirrors the API)
+schoolapp fetch-all           # log in, fetch everything, write the store
+schoolapp serve               # expose the store over the API the plasmoid/Android app read
 
-schoolapp s4 list
-schoolapp s4 calc
-schoolapp s4 watch
+schoolapp s3 list | calc | watch
+schoolapp s4 list | calc | watch | table
 ```
+
+Commands are grouped in `--help` by panel: **Read** (offline, from the store),
+**Live** (logs into the portal), **Server**, **Semesters**, **Catalog**.
+
+### Rattrapage / règlement
+
+`schoolapp explain <CODE>` and the `s3/s4 table` views apply the official ENSAM
+evaluation règlement (CE 2019‑10‑22 / CU 2019‑12‑25): after a rattrapage the
+element moyenne is `max(SO, max(0.3·CC + 0.7·Rat, Rat))` (Art. 7) and a module
+validated on rattrapage is capped at the pass bar - 11/20 in the prépa years,
+12/20 in the cycle ingénieur (Art. 9). Values the tool computes while the portal
+has not yet published them are shown with a `*` marker.
+
+### CSV export
+
+```bash
+schoolapp csv grades --latest -o grades.csv   # current-year element marks
+schoolapp csv stats  -o rankings.csv          # NoteRAT/exam ranking stats (needs fetch-all --stats)
+```
+
+Resources: `elements`/`grades`, `modules`, `semesters`, `years`, `courses`,
+`absences`, `stats`. The same rows are available over HTTP at
+`GET /api/csv/<resource>`.
 
 ## Common Commands
 
 ```bash
 schoolapp --help
 schoolapp --version
+schoolapp --install-completion   # shell tab-completion
 schoolapp s3 --help
 schoolapp s4 --help
 ```

@@ -48,14 +48,17 @@ app = typer.Typer(
         "serve exposes that same store over the API the plasmoid/Android app read; "
         "status shows what it would serve. s3/s4 are the per-semester namespaces."
     ),
-    epilog="Examples: schoolapp fetch-all | schoolapp serve | schoolapp s4 watch --once",
+    epilog=("Examples: schoolapp             (dashboard)   |  schoolapp changes\n"
+            "          schoolapp explain API421   |  schoolapp csv grades -o grades.csv\n"
+            "          schoolapp s4 table  |  schoolapp serve\n"
+            "Shell completion: schoolapp --install-completion"),
 )
 
-app.add_typer(s3_app, name="s3", help="Semester S3 namespace")
-app.add_typer(s4_app, name="s4", help="Semester S4 namespace")
+app.add_typer(s3_app, name="s3", help="Semester S3 namespace", rich_help_panel="Semesters")
+app.add_typer(s4_app, name="s4", help="Semester S4 namespace", rich_help_panel="Semesters")
 
 catalog_app = typer.Typer(no_args_is_help=True, help="Institution-wide curriculum catalog")
-app.add_typer(catalog_app, name="catalog")
+app.add_typer(catalog_app, name="catalog", rich_help_panel="Catalog")
 
 RESOURCE_FILES = store.RESOURCE_FILES
 
@@ -118,7 +121,7 @@ def main(
         _dashboard_impl(json_out=False)
 
 
-@app.command("doctor")
+@app.command("doctor", rich_help_panel="Live (portal login)")
 def doctor(
     ctx: typer.Context,
     check: bool = typer.Option(False, "--check", help="Run one-shot auth/connectivity checks"),
@@ -173,7 +176,7 @@ def doctor(
         raise typer.Exit(code=1)
 
 
-@app.command("profile")
+@app.command("profile", rich_help_panel="Live (portal login)")
 def profile_cmd(
     ctx: typer.Context,
     email: str | None = typer.Option(None, help="SchoolApp email (overrides config/env)"),
@@ -192,7 +195,7 @@ def profile_cmd(
     console.print(render.profile_view(asdict(p)))
 
 
-@app.command("fetch-all")
+@app.command("fetch-all", rich_help_panel="Live (portal login)")
 def fetch_all_cmd(
     ctx: typer.Context,
     email: str | None = typer.Option(None, help="SchoolApp email (overrides config/env)"),
@@ -234,7 +237,7 @@ def fetch_all_cmd(
         err_console.print(f"[error]{name}: {err}[/error]")
 
 
-@app.command("export")
+@app.command("export", rich_help_panel="Live (portal login)")
 def export_cmd(
     ctx: typer.Context,
     out: str = typer.Option(..., "--out", help="Output directory"),
@@ -275,7 +278,7 @@ def export_cmd(
 STORE_RESOURCES = ["student/all", *RESOURCE_FILES.values(), "catalog/modules", "catalog/filieres"]
 
 
-@app.command("status")
+@app.command("status", rich_help_panel="Read (offline · store)")
 def status_cmd(json_out: bool = JSON_OPT) -> None:
     """Show what the API would serve: per-resource freshness from the local store.
 
@@ -311,13 +314,13 @@ def _dashboard_impl(json_out: bool) -> None:
         fresh, changes, str(store.state_dir())))
 
 
-@app.command("dashboard")
+@app.command("dashboard", rich_help_panel="Read (offline · store)")
 def dashboard(json_out: bool = JSON_OPT) -> None:
     """Overview: who you are, latest results, store freshness, recent changes."""
     _dashboard_impl(json_out=json_out)
 
 
-@app.command("changes")
+@app.command("changes", rich_help_panel="Read (offline · store)")
 def changes_cmd(
     limit: int = typer.Option(20, "--limit", "-n", help="Max entries (newest first)"),
     type: str | None = typer.Option(None, "--type", help="Filter by change type (grades, rattrapage, absences…)"),
@@ -342,7 +345,7 @@ _CSV_RESOURCES = {
 }
 
 
-@app.command("csv")
+@app.command("csv", rich_help_panel="Read (offline · store)")
 def csv_cmd(
     resource: str = typer.Argument(...,
         help="elements|grades|modules|semesters|years|courses|absences|stats"),
@@ -374,7 +377,7 @@ def csv_cmd(
         typer.echo(text, nl=False)
 
 
-@app.command("explain")
+@app.command("explain", rich_help_panel="Read (offline · store)")
 def explain(
     code: str = typer.Argument(..., help="Element code, e.g. API421"),
     json_out: bool = JSON_OPT,
@@ -409,7 +412,7 @@ def explain(
         caption="* calculé par l'outil - en attente de publication par le portail"))
 
 
-@app.command("serve")
+@app.command("serve", rich_help_panel="Server")
 def serve_cmd(
     ctx: typer.Context,
     host: str = typer.Option("0.0.0.0", help="Bind address"),
@@ -529,7 +532,7 @@ def catalog_show(
 
 show_app = typer.Typer(no_args_is_help=True,
                        help="Display cached data from the store (offline; mirrors the API).")
-app.add_typer(show_app, name="show")
+app.add_typer(show_app, name="show", rich_help_panel="Read (offline · store)")
 
 
 def _load(name: str):
@@ -706,7 +709,7 @@ def show_filieres(json_out: bool = JSON_OPT) -> None:
 
 documents_app = typer.Typer(no_args_is_help=True,
                             help="Student PDF documents (attestation de scolarité, relevés).")
-app.add_typer(documents_app, name="documents")
+app.add_typer(documents_app, name="documents", rich_help_panel="Live (portal login)")
 
 
 @documents_app.command("list")
