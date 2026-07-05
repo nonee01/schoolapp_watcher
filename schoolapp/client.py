@@ -284,6 +284,11 @@ class SchoolAppClient:
 
         if include_stats:
             data.stats = grab("stats", lambda: self._all_stats(current), [])
+        try:
+            from .academics import annotate_student_data
+            annotate_student_data(data)
+        except Exception as exc:  # noqa: BLE001 - computed fields are best-effort
+            data.errors["academics"] = str(exc)
         return data
 
     def _all_stats(self, grades: list[ElementGrade]) -> list[MarkStatistics]:
