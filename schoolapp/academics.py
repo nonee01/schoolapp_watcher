@@ -210,6 +210,58 @@ def annotate_student_data(data) -> list[str]:
     return lines
 
 
+# ── explanation (schoolapp explain CODE) ─────────────────────────────────
+
+def explain_element(code: str, items: list[dict]) -> dict | None:
+    """Règlement walkthrough for one element, built from store envelope dicts.
+    Picks the latest AU row for the code (prefers one with a RAT note)."""
+    code_up = (code or "").strip().upper()
+    rows = [g for g in items if str(g.get("code", "")).upper() == code_up]
+    if not rows:
+        return None
+    rows.sort(key=lambda g: (bool(parse_note(g.get("rat"))), str(g.get("au", ""))))
+    g = rows[-1]
+
+    so = parse_note(g.get("moy")) or parse_note(g.get("moy_so"))
+    steps = [{
+        "article": "Art. 4", "label": "Moyenne session ordinaire",
+        "formula": "0.3·CC + 0.7·EX (pondérée TP le cas échéant)",
+        "value": fmt_note(so) if so is not None else "--", "official": True,
+    }]
+    rat = parse_note(g.get("rat"))
+    if rat is not None:
+        official_sr = parse_note(g.get("moy_sr"))
+        if official_sr is not None:
+            sr_val, official = fmt_note(official_sr), True
+        else:
+            sr_val = g.get("moy_sr_computed") or fmt_note(
+                element_moy_sr(moy_so=so, cc=parse_note(g.get("cc")), rat=rat))
+            official = False
+        steps.append({
+            "article": "Art. 7", "label": "Moyenne après rattrapage",
+            "formula": "max(SO, max(0.3·CC + 0.7·Rat, Rat))",
+            "value": sr_val, "official": official,
+        })
+        mdef = module_def_for(code_up)
+        if mdef is not None and g.get("decision_computed"):
+            bar = fmt_note(Decimal(str(mdef.seuil)))
+            steps.append({
+                "article": "Art. 5/6/9", "label": f"Module {mdef.code}",
+                "formula": (f"Σ Ci·élément / Σ Ci ≥ {bar} et chaque élément ≥ "
+                            f"{fmt_note(Decimal(str(mdef.eliminatoire)))} → "
+                            f"validé plafonné à {bar}"),
+                "value": f"{g['decision_computed']} ({bar}*)"
+                         if g["decision_computed"] == "VRAT" else g["decision_computed"],
+                "official": False,
+            })
+    return {
+        "code": code_up, "au": str(g.get("au", "")),
+        "inputs": {k: str(g.get(k) or "") for k in
+                   ("cc", "ex", "tp", "moy_so", "rat", "moy_sr", "decision")},
+        "steps": steps,
+    }
+
+
 # ── legacy snapshot-table overlay (s3/s4 consolidated table) ─────────────
 
 def overlay_snapshot_rows(headers: list[str], rows: list[list[str]],

@@ -334,6 +334,41 @@ def changes_cmd(
     render.console.print(render.changes_table(items))
 
 
+@app.command("explain")
+def explain(
+    code: str = typer.Argument(..., help="Element code, e.g. API421"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Règlement walkthrough for one element: how SO/SR/decision are computed."""
+    from .academics import explain_element
+
+    env = store.load_resource("student/elements")
+    items = (env or {}).get("data") or []
+    exp = explain_element(code, items)
+    if exp is None:
+        if json_out:
+            _emit_json(None)
+        else:
+            render.console.print(render.error_panel(
+                f"No cached grades for {code.upper()}.",
+                hint="Run `schoolapp fetch-all` first, or check the code."))
+        raise typer.Exit(code=1)
+    if json_out:
+        _emit_json(exp)
+        return
+    inp = exp["inputs"]
+    render.console.print(render.data_table(
+        f"{exp['code']} · AU {exp['au']}", ["CC", "EX", "TP", "Moy SO", "RAT", "Moy SR", "Décision"],
+        [[inp["cc"] or "--", inp["ex"] or "--", inp["tp"] or "--", inp["moy_so"] or "--",
+          inp["rat"] or "--", inp["moy_sr"] or "--", inp["decision"] or "--"]]))
+    rows = [[s["article"], s["label"], s["formula"], s["value"],
+             "officiel" if s["official"] else "calculé*"] for s in exp["steps"]]
+    render.console.print(render.data_table(
+        "Règlement (CE 2019-10-22 / CU 2019-12-25)",
+        ["Article", "Étape", "Formule", "Valeur", "Source"], rows,
+        caption="* calculé par l'outil — en attente de publication par le portail"))
+
+
 @app.command("serve")
 def serve_cmd(
     ctx: typer.Context,
