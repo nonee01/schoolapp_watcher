@@ -64,7 +64,7 @@ def table_cmd(
 def details_cmd(
     ctx: typer.Context,
     element: str = typer.Argument(..., help="Element code (e.g., API411)"),
-    eval: str = typer.Option("all", help="Which stat popup to fetch: all|cc|ex|tp|moy"),
+    eval: str = typer.Option("all", help="Which stat popup to fetch: all|cc|ex|tp|rat|moy"),
     timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
     email: str | None = typer.Option(None, help="SchoolApp email"),
     password: str | None = typer.Option(None, help="SchoolApp password"),

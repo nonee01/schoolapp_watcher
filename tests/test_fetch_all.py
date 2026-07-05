@@ -42,6 +42,7 @@ class FakeSession:
         self.fail_paths = set(fail_paths)
         self.logged_in = False
         self.requests: list[str] = []
+        self.calls: list[tuple[str, dict]] = []  # (path, query params)
 
     def _page(self, path: str) -> FakeResponse:
         if path == "/login" or not self.logged_in:
@@ -56,6 +57,7 @@ class FakeSession:
     def get(self, url, params=None, timeout=None):
         path = url.replace(SCHOOLAPP_BASE, "")
         self.requests.append(path)
+        self.calls.append((path, dict(params or {})))
         if path in self.fail_paths:
             raise requests.ConnectionError(f"boom {path}")
         return self._page(path)
@@ -119,10 +121,13 @@ def test_fetch_all_with_stats_fetches_current_elements_only():
     client, session = make_client()
     data = client.fetch_all(include_stats=True)
     popups = [p for p in session.requests if p == "/notes-stat/elemevalsat"]
-    with_moy = [g for g in data.element_grades[:24] if g.moy and g.moy != "--"]
-    assert len(popups) == len(with_moy) > 0
+    current = data.element_grades[:24]
+    with_moy = [g for g in current if g.moy and g.moy != "--"]
+    with_rat = [g for g in current if g.rat and g.rat != "--"]
+    assert len(popups) == len(with_moy) + len(with_rat) > 0
     assert len(data.stats) == len(popups)
     assert data.stats[0].eval_kind == "MoyElem"
+    assert any(s.eval_kind == "NoteRAT" for s in data.stats)  # rattrapage promo stats
 
 
 def test_mark_statistics_for_one_element():
@@ -151,3 +156,21 @@ def test_download_reauths_on_expiry():
     doc = Document(kind="attestation-scolarite", url="/student/documents/attestation-scolarite")
     assert client.download(doc).startswith(b"%PDF")
     assert session.logged_in
+
+
+def test_mark_statistics_supports_noterat():
+    """The rattrapage ranking curve: eval=NoteRAT with the student's RAT note."""
+    client, session = make_client()
+    stats = client.mark_statistics("api421", eval_kind="rat")
+    assert len(stats) == 1 and stats[0].eval_kind == "NoteRAT"
+    q = next(q for p, q in session.calls
+             if p == "/notes-stat/elemevalsat" and q.get("eval") == "NoteRAT")
+    assert q["codeelem"] == "API421" and q["note"] == "14.5"
+
+
+def test_mark_statistics_rat_skipped_when_no_rat_note():
+    client, session = make_client()
+    stats = client.mark_statistics("api411", eval_kind="rat")  # no RAT taken
+    assert stats == []
+    assert not any(q.get("eval") == "NoteRAT" for p, q in session.calls
+                   if p == "/notes-stat/elemevalsat")
