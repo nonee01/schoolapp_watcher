@@ -208,3 +208,64 @@ def annotate_student_data(data) -> list[str]:
                 m.decision_computed = outcome.decision
                 m.coeff_assumed = outcome.coeff_assumed
     return lines
+
+
+# ── legacy snapshot-table overlay (s3/s4 consolidated table) ─────────────
+
+def overlay_snapshot_rows(headers: list[str], rows: list[list[str]],
+                          semester: str, niveau: str = "2A") -> tuple[list[list[str]], list[str]]:
+    """Gap-fill MoySR/Moy/Dec cells (as "15.03*" / "VRAT*") on a copy of the rows."""
+    idx = {h: i for i, h in enumerate(headers)}
+    needed = {"CodeElem", "CC", "MoySO", "RAT", "MoySR", "Moy", "Dec"}
+    if not needed <= set(idx):
+        return rows, []
+
+    def cell(row, key):
+        i = idx[key]
+        return row[i].strip() if i < len(row) else ""
+
+    out = [list(r) for r in rows]
+    # candidate elements grouped by module
+    pending: dict[str, list[int]] = {}
+    for n, r in enumerate(out):
+        if parse_note(cell(r, "RAT")) is None or parse_note(cell(r, "MoySR")) is not None:
+            continue
+        code = cell(r, "CodeElem").upper()
+        if not code:
+            continue
+        mdef = module_def_for(code)
+        pending.setdefault(mdef.code.upper() if mdef else code[:-1], []).append(n)
+
+    lines: list[str] = []
+    for mod_code, row_idx in pending.items():
+        mdef = module_def_for(cell(out[row_idx[0]], "CodeElem"))
+        member = ({e.code.upper() for e in mdef.elements} if mdef
+                  else {cell(out[n], "CodeElem").upper() for n in row_idx})
+        notes: dict[str, Decimal] = {}
+        srs: dict[int, Decimal] = {}
+        for n, r in enumerate(out):
+            code = cell(r, "CodeElem").upper()
+            if code not in member:
+                continue
+            official_sr, rat = parse_note(cell(r, "MoySR")), parse_note(cell(r, "RAT"))
+            so = parse_note(cell(r, "MoySO")) or parse_note(cell(r, "Moy"))
+            if official_sr is not None:
+                notes[code] = official_sr
+            elif rat is not None:
+                sr = element_moy_sr(moy_so=so, cc=parse_note(cell(r, "CC")), rat=rat)
+                notes[code] = sr
+                srs[n] = sr
+            elif so is not None:
+                notes[code] = so
+        if not srs:
+            continue
+        outcome = module_after_rat(mdef, notes, niveau)
+        for n, sr in srs.items():
+            marked = fmt_note(sr) + "*"
+            out[n][idx["MoySR"]] = marked
+            out[n][idx["Moy"]] = marked
+            out[n][idx["Dec"]] = outcome.decision + "*"
+            lines.append(
+                f"{cell(out[n], 'CodeElem')}: RAT {cell(out[n], 'RAT')} -> Moy SR {marked} -> "
+                f"module {mod_code}: {outcome.decision} ({outcome.final}*)")
+    return out, lines

@@ -261,6 +261,8 @@ def _render_consolidated_snapshot(headers: list[str], rows: list[list[str]], sem
     """Render a single consolidated table from a snapshot, filtering elements by semester module prefixes."""
     if "CodeElem" not in headers:
         return
+    from .academics import overlay_snapshot_rows
+    rows, computed_lines = overlay_snapshot_rows(headers, rows, semester)
     index = {h: i for i, h in enumerate(headers)}
     modules = modules_for_semester(semester)
     module_prefixes = {m.code.upper() for m in modules}
@@ -314,7 +316,10 @@ def _render_consolidated_snapshot(headers: list[str], rows: list[list[str]], sem
         dec = get_cell(r, "Dec")
         
         # Color status based on value
-        if dec == "VORD":
+        if dec.endswith("*"):
+            dec_styled = f"[italic green]{dec}[/italic green]" if dec.startswith("V") \
+                else f"[italic red]{dec}[/italic red]"
+        elif dec == "VORD":
             dec_styled = "[green]VORD[/green]"
         elif dec == "RAT":
             dec_styled = "[yellow]RAT[/yellow]"
@@ -326,6 +331,8 @@ def _render_consolidated_snapshot(headers: list[str], rows: list[list[str]], sem
         table.add_row(code, intitule, cc, ex, tp, moyso, rat, moysr, moy, dec_styled)
 
     console.print(table)
+    if computed_lines:
+        console.print("[dim]* calculé selon le règlement (Art. 7/9) - en attente de publication[/dim]")
 
 
 def _is_validated(moy: str) -> bool:
@@ -1035,6 +1042,22 @@ _GENERIC_RESOURCES = [
 ]
 
 
+def _rattrapage_diff(data) -> list[str]:
+    """New/changed computed rattrapage outcomes vs the stored baseline.
+    No baseline envelope -> no alert (mirrors _generic_resource_diffs)."""
+    env = store.load_resource("student/elements")
+    if not env or not isinstance(env.get("data"), list):
+        return []
+    old = {(g.get("code"), g.get("au")): g.get("moy_sr_computed") or ""
+           for g in env["data"]}
+    lines: list[str] = []
+    for g in data.element_grades:
+        if g.moy_sr_computed and old.get((g.code, g.au), "") != g.moy_sr_computed:
+            lines.append(f"{g.code}: RAT {g.rat} -> Moy SR {g.moy_sr_computed}* "
+                         f"({g.decision_computed})")
+    return lines
+
+
 def _generic_resource_diffs(data) -> list[tuple[str, str, list[str]]]:
     """[(changes.jsonl type, digest title, lines)] - must run before save_student_data."""
     from dataclasses import asdict
@@ -1137,6 +1160,10 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
     sem_cards, sem_subj = _diff_semester_cards(extras_old.get("semesters"), extras_new.get("semesters") or {})
     extra_cards = abs_cards + mod_cards + sem_cards
     generic_changes = _generic_resource_diffs(data)
+    rat_lines = _rattrapage_diff(data)
+    if rat_lines:
+        generic_changes.append(
+            ("rattrapage", "Rattrapage - résultats calculés (règlement)", rat_lines))
 
     snap = Snapshot(headers=headers, rows=rows, fingerprint=_fingerprint(headers, rows), extras=extras_new)
     _save_snapshot(path, snap)
