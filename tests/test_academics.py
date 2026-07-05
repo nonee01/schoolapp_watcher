@@ -169,3 +169,31 @@ def test_explain_element_without_rat_is_art4_only():
               "moy_sr_computed": "", "decision_computed": ""}]
     exp = ac.explain_element("API411", items)
     assert len(exp["steps"]) == 1 and "Art. 4" in exp["steps"][0]["article"]
+
+
+def _mod(code, moy="", decision="", moy_c="", dec_c=""):
+    return {"code": code, "moy": moy, "decision": decision,
+            "moy_computed": moy_c, "decision_computed": dec_c}
+
+
+def test_year_outcome_art11_conditions():
+    mods = [_mod("API41", "13.43", "VORD"),
+            _mod("API42", "", "RAT", moy_c="11.00", dec_c="VRAT"),   # computed VRAT counts
+            _mod("API44", "14.98", "VORD"),
+            _mod("API45", "8.60", "NV")]
+    out = ac.year_outcome(mods, "2A")
+    assert out["non_valides"] == ["API45"]
+    assert out["conditions"]["nv_count"] is True        # 1 NV <= 2
+    assert out["conditions"]["floor"] is True           # all >= 7
+    assert out["computed"] is True                      # used a *_computed value
+    assert isinstance(out["would_validate"], bool)
+
+
+def test_year_outcome_floor_and_count_breaches():
+    mods = [_mod("API41", "6.50", "NV"), _mod("API42", "10.00", "NV"),
+            _mod("API44", "10.50", "NV"), _mod("API45", "15.00", "VORD")]
+    out = ac.year_outcome(mods, "2A")
+    assert out["conditions"]["nv_count"] is False       # 3 NV > 2
+    assert "API41" in out["floor_breach"]               # 6.50 < 7
+    assert out["would_validate"] is False
+    assert out["computed"] is False
