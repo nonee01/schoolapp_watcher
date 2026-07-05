@@ -32,6 +32,7 @@ from .extractors._tables import (
 from .models import Absence, ModuleGrade, Sanction, SemesterResult
 from .presets import modules_for_semester
 from .calculator import _to_float, _calc_element_grade, _calc_element_rattrapage
+from .tokens import color as _tok
 from .utils import console, log
 
 MARKS_PATH = ELEMENTS_PATH  # legacy name, kept for external callers
@@ -339,10 +340,10 @@ def _status_style(moy: str) -> tuple[str, str, str]:
     try:
         val = float(moy.rstrip("*"))
         if val >= 11.0:
-            return "#166534", "#dcfce7", "✓ Validé"
-        return "#991b1b", "#fee2e2", "✗ Non validé"
+            return _tok("ok")["hex"], _tok("ok")["hex_bg"], "✓ Validé"
+        return _tok("fail")["hex"], _tok("fail")["hex_bg"], "✗ Non validé"
     except (ValueError, AttributeError):
-        return "#374151", "#f3f4f6", "En attente"
+        return _tok("muted")["hex"], _tok("muted")["hex_bg"], "En attente"
 
 
 def _compute_moy(code: str, cc: str, ex: str, tp: str, element_defs: dict) -> str:
@@ -576,10 +577,10 @@ def _dec_badge(dec: str) -> tuple[str, str, str]:
     """Color/label for an official decision code (VORD/VRAT/VRAC/NV/--)."""
     d = (dec or "").upper().strip()
     if d.startswith("V"):
-        return "#166534", "#dcfce7", f"✓ {d}"
+        return _tok("ok")["hex"], _tok("ok")["hex_bg"], f"✓ {d}"
     if d == "NV":
-        return "#991b1b", "#fee2e2", "✗ NV"
-    return "#374151", "#f3f4f6", d if d and d != "--" else "En attente"
+        return _tok("fail")["hex"], _tok("fail")["hex_bg"], "✗ NV"
+    return _tok("muted")["hex"], _tok("muted")["hex_bg"], d if d and d != "--" else "En attente"
 
 
 def _simple_card(border: str, kicker_html: str, title: str, body_html: str) -> str:
@@ -601,11 +602,11 @@ def _diff_absence_cards(old_log: dict | None, new_log: dict, old_sanc: dict | No
             title = element_titles.get(a["element"].upper(), a["element"])
             justified = a.get("justif") == "true"
             if old_a is None:
-                fg = "#166534" if justified else "#991b1b"
-                bg = "#dcfce7" if justified else "#fee2e2"
+                fg = _tok("ok")["hex"] if justified else _tok("fail")["hex"]
+                bg = _tok("ok")["hex_bg"] if justified else _tok("fail")["hex_bg"]
                 badge = "Justifiée" if justified else "Non justifiée"
                 body = (
-                    f"<div style='font-size:14px;color:#374151;'>{a['date']} · {a['seance']}</div>"
+                    f"<div style='font-size:14px;color:{_tok('muted')['hex']};'>{a['date']} · {a['seance']}</div>"
                     f"<div style='margin-top:8px;display:inline-block;background:{bg};color:{fg};font-weight:700;font-size:13px;padding:4px 12px;border-radius:20px;'>{badge}</div>"
                 )
                 if a.get("remarks"):
@@ -614,8 +615,8 @@ def _diff_absence_cards(old_log: dict | None, new_log: dict, old_sanc: dict | No
                 if subject is None:
                     subject = f"🚨 Absence {'justifiée' if justified else 'non justifiée'} - {title}"
             elif old_a.get("justif") != a.get("justif") and justified:
-                body = f"<div style='font-size:14px;color:#374151;'>{a['date']} · {a['seance']} - désormais justifiée</div>"
-                cards.append(_simple_card("#166534", f"{a['element']} · <span style='color:#16a34a;font-weight:600;'>ABSENCE JUSTIFIÉE</span>", title, body))
+                body = f"<div style='font-size:14px;color:{_tok('muted')['hex']};'>{a['date']} · {a['seance']} - désormais justifiée</div>"
+                cards.append(_simple_card(_tok("ok")["hex"], f"{a['element']} · <span style='color:#16a34a;font-weight:600;'>ABSENCE JUSTIFIÉE</span>", title, body))
                 subject = subject or f"Absence justifiée - {title}"
 
     if old_sanc is not None and new_sanc and new_sanc != old_sanc:
@@ -1175,7 +1176,7 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
                     if subj:
                         subjects.append(subj)
             for _gkind, _gtitle, _glines in generic_changes:
-                sections.append(_simple_card("#6366f1", "SchoolApp", _gtitle, "<br>".join(_glines)))
+                sections.append(_simple_card(_tok("info")["hex"], "SchoolApp", _gtitle, "<br>".join(_glines)))
                 subjects.append(f"{_gtitle} - {len(_glines)} changement(s)")
             subject = subjects[0] if subjects else f"SchoolApp {semester} - mise à jour"
             if len(subjects) > 1:
