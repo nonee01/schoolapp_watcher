@@ -146,3 +146,26 @@ def test_annotate_is_noop_without_rat_notes():
                        element_grades=[_elem("API411", moy="13.43", decision="VORD")])
     assert ac.annotate_student_data(data) == []
     assert data.element_grades[0].moy_sr_computed == ""
+
+
+def test_explain_element_full_rattrapage_story():
+    items = [
+        {"code": "API421", "au": "24/25", "cc": "16.25", "ex": "6.0", "tp": "",
+         "moy": "9.08", "rat": "14.5", "moy_sr": "", "decision": "RAT",
+         "moy_sr_computed": "15.03", "decision_computed": "VRAT"},
+    ]
+    exp = ac.explain_element("api421", items)
+    assert exp["code"] == "API421"
+    arts = [s["article"] for s in exp["steps"]]
+    assert "Art. 4" in arts[0] and any("Art. 7" in a for a in arts)
+    art7 = next(s for s in exp["steps"] if "Art. 7" in s["article"])
+    assert art7["value"] == "15.03" and art7["official"] is False
+    assert ac.explain_element("NOPE", items) is None
+
+
+def test_explain_element_without_rat_is_art4_only():
+    items = [{"code": "API411", "au": "24/25", "cc": "11.5", "ex": "14.25", "tp": "",
+              "moy": "13.43", "rat": "", "moy_sr": "", "decision": "VORD",
+              "moy_sr_computed": "", "decision_computed": ""}]
+    exp = ac.explain_element("API411", items)
+    assert len(exp["steps"]) == 1 and "Art. 4" in exp["steps"][0]["article"]

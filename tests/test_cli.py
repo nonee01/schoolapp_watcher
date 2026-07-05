@@ -195,3 +195,13 @@ def test_bare_invocation_shows_dashboard_or_help(tmp_path, monkeypatch):
 
     explicit = runner.invoke(app, ["dashboard"])
     assert explicit.exit_code == 0 and "State store" in explicit.output
+
+
+def test_explain_command(tmp_path, monkeypatch):
+    _seed_store(tmp_path, monkeypatch)
+    result = runner.invoke(app, ["explain", "API311"])
+    assert result.exit_code == 0 and "Art. 4" in result.output
+    data = json.loads(runner.invoke(app, ["-q", "explain", "API311", "--json"]).output)
+    assert data["code"] == "API311" and data["steps"]
+    missing = runner.invoke(app, ["explain", "ZZZ999"])
+    assert missing.exit_code == 1
