@@ -97,6 +97,36 @@ def save_student_data(data, *, source: str = "fetch_all", directory: Path | None
         save_resource(name, getattr(data, attr), source=source, directory=directory)
 
 
+def changes_path(directory: Path | None = None) -> Path:
+    """The watcher's changes.jsonl (legacy format, one JSON object per line)."""
+    return (directory or state_dir()) / "changes.jsonl"
+
+
+def read_changes(*, limit: int = 50, since: str | None = None,
+                 type: str | None = None, directory: Path | None = None) -> list[dict]:
+    """Newest-first change history; [] when the file is absent. Feeds
+    /api/changes and `schoolapp changes` (spec §5)."""
+    try:
+        text = changes_path(directory).read_text(encoding="utf-8")
+    except OSError:
+        return []
+    out: list[dict] = []
+    for line in text.splitlines():
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        if type and entry.get("type") != type:
+            continue
+        if since and str(entry.get("ts", "")) <= since:
+            continue
+        out.append(entry)
+    out.reverse()
+    return out[:limit] if limit and limit > 0 else out
+
+
 def freshness(names: list[str], directory: Path | None = None) -> dict[str, str | None]:
     """{resource name: fetched_at | None} — feeds /api/status `resources` (spec §8.1)."""
     out: dict[str, str | None] = {}

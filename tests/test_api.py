@@ -101,3 +101,13 @@ def test_catalog_endpoints(client, fixture_html):
     assert everything and filtered == everything  # fixture is a single 2A/API-MPT combo
     assert client.get("/api/catalog?filiere=NOPE").get_json()["modules"] == []
     assert client.get("/api/filieres").get_json()["filieres"] == []
+
+
+def test_changes_endpoint(client, monkeypatch):
+    body = client.get("/api/changes").get_json()
+    assert body["count"] >= 1
+    assert any(e["type"] == "grades" for e in body["changes"])
+    assert client.get("/api/changes?type=nonexistent").get_json() == {"changes": [], "count": 0}
+    assert client.get("/api/changes?limit=1").get_json()["count"] == 1
+    monkeypatch.setenv("API_KEY", "sekrit")
+    assert client.get("/api/changes").status_code == 401

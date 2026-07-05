@@ -411,6 +411,21 @@ def filieres():
     return _from_store("catalog/filieres", "filieres")
 
 
+@app.get("/api/changes")
+def changes():
+    """The watcher's change history — the same feed the email digests narrate."""
+    err = _auth()
+    if err:
+        return err
+    try:
+        limit = max(0, int(request.args.get("limit", 50)))
+    except ValueError:
+        limit = 50
+    items = store.read_changes(limit=limit, since=request.args.get("since") or None,
+                               type=request.args.get("type") or None)
+    return jsonify({"changes": items, "count": len(items)})
+
+
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=8787, threads=4)
