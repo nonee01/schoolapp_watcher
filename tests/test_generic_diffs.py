@@ -72,6 +72,23 @@ def test_history_grade_rows_diffed_but_current_rows_left_to_rich_path(monkeypatc
     assert any(e["type"] == "elements_history" and "0.42" not in e["summary"] for e in hist)
 
 
+def test_rattrapage_computed_lands_in_digest_and_changes(monkeypatch, tmp_path):
+    """A RAT note appearing (with no published Moy SR) must produce a
+    'rattrapage' changes.jsonl entry on the second run (first = baseline)."""
+    _check(monkeypatch, tmp_path)  # baseline: fixtures carry API421/API452 RAT rows
+
+    def wipe(items):  # simulate the RAT notes having appeared only now
+        for g in items:
+            g["rat"], g["moy_sr_computed"], g["decision_computed"] = "", "", ""
+    _tamper(tmp_path, "student/elements", wipe)
+
+    assert _check(monkeypatch, tmp_path) == 1
+    hist = [json.loads(x) for x in
+            (tmp_path / "schoolapp" / "changes.jsonl").read_text().splitlines()]
+    rat = [e for e in hist if e["type"] == "rattrapage"]
+    assert rat and "Rattrapage" in rat[0]["summary"]
+
+
 def test_catalog_crawl_emits_one_change_summary(monkeypatch, tmp_path, fixture_html):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
     mods = parse_catalog_modules(fixture_html("catalog_modules_full"), filiere="API-MPT")

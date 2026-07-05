@@ -117,6 +117,29 @@ def test_annotate_fills_gaps_and_respects_official_values():
     assert any("API421" in ln for ln in lines) and any("API452" in ln for ln in lines)
 
 
+def test_overlay_snapshot_rows_fills_computed_cells():
+    headers = ["CodeElem", "CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy", "Dec"]
+    rows = [
+        ["API411", "11.5", "14.25", "", "13.43", "", "", "13.43", "VORD"],
+        ["API421", "16.25", "6.0", "", "9.08", "14.5", "", "9.08", "RAT"],
+    ]
+    new_rows, lines = ac.overlay_snapshot_rows(headers, rows, "S4")
+    assert rows[1][6] == ""                      # input untouched (copy)
+    assert new_rows[0] == rows[0]                # VORD row untouched
+    idx = {h: i for i, h in enumerate(headers)}
+    assert new_rows[1][idx["MoySR"]] == "15.03*"
+    assert new_rows[1][idx["Moy"]] == "15.03*"
+    assert new_rows[1][idx["Dec"]].endswith("*") and "V" in new_rows[1][idx["Dec"]]
+    assert lines and "API421" in lines[0]
+
+
+def test_overlay_leaves_published_sr_alone():
+    headers = ["CodeElem", "CC", "EX", "TP", "MoySO", "RAT", "MoySR", "Moy", "Dec"]
+    rows = [["API421", "16.25", "6.0", "", "9.08", "14.5", "12.00", "12.00", "VRAT"]]
+    new_rows, lines = ac.overlay_snapshot_rows(headers, rows, "S4")
+    assert new_rows == rows and lines == []
+
+
 def test_annotate_is_noop_without_rat_notes():
     from schoolapp.models import StudentData, StudentProfile
     data = StudentData(profile=StudentProfile(niveau="2A"),
