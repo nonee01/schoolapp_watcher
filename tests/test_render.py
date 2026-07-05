@@ -55,3 +55,16 @@ def test_every_renderer_runs_on_envelope_data():
 def test_error_and_empty_panels():
     assert "boom" in _render(render.error_panel("boom", hint="try again"))
     assert "No cached grades" in _render(render.empty_hint("grades"))
+
+
+def test_changes_table_and_dashboard_view():
+    changes = [{"ts": "2026-07-05T15:00:00", "type": "rattrapage",
+                "semester": "S4", "summary": "API421 → 15.03*"}]
+    assert "rattrapage" in _render(render.changes_table(changes))
+    out = _render(render.dashboard_view(
+        {"prenom": "A", "nom": "B", "filiere": "API", "niveau": "2A"},
+        [{"niveau": "2A", "semestre": "S4", "au": "24", "moy_sem": "12", "decision": "V"}],
+        {"student/all": "2026-07-05"}, changes, "/tmp/store"))
+    assert "A B" in out and "S4" in out and "rattrapage" in out and "/tmp/store" in out
+    # empty-safe
+    assert _render(render.dashboard_view(None, [], {}, [], "/tmp/store"))
