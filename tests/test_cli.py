@@ -167,3 +167,31 @@ def test_export_matches_store_layout(tmp_path, monkeypatch):
     assert (out_dir / "documents" / "attestation.pdf").read_bytes().startswith(b"%PDF")
     # --with-documents also seeds the live store so /api/documents/<kind> can serve it
     assert store.document_path("attestation.pdf").exists()
+
+
+def test_changes_command_reads_history(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    p = tmp_path / "schoolapp" / "changes.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"ts": "2026-07-05T15:00:00", "type": "rattrapage",
+                             "semester": "S4", "summary": "API421 -> 15.03*"}) + "\n",
+                 encoding="utf-8")
+    human = runner.invoke(app, ["changes"])
+    assert human.exit_code == 0 and "rattrapage" in human.output
+    data = json.loads(runner.invoke(app, ["-q", "changes", "--json"]).output)
+    assert data[0]["type"] == "rattrapage"
+
+
+def test_bare_invocation_shows_dashboard_or_help(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    empty = runner.invoke(app, [])
+    assert empty.exit_code == 0
+    assert "fetch-all" in empty.output          # empty store -> guidance
+
+    _seed_store(tmp_path, monkeypatch)
+    dash = runner.invoke(app, [])
+    assert dash.exit_code == 0
+    assert "State store" in dash.output         # freshness table = dashboard marker
+
+    explicit = runner.invoke(app, ["dashboard"])
+    assert explicit.exit_code == 0 and "State store" in explicit.output

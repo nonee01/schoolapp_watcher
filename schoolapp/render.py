@@ -184,6 +184,31 @@ def filieres_table(items: list[dict]) -> Table:
     return data_table(f"Filières ({len(items)})", ["Code", "Intitulé"], rows)
 
 
+def changes_table(items: list[dict]) -> Table:
+    rows = [[c.get("ts", ""), c.get("type", ""), c.get("semester", ""), c.get("summary", "")]
+            for c in items]
+    return data_table(f"Changes ({len(items)})", ["When", "Type", "Sem", "Summary"], rows)
+
+
+def dashboard_view(profile: dict | None, semesters: list[dict],
+                   freshness: dict[str, str | None], changes: list[dict],
+                   store_dir: str) -> Group:
+    parts: list[Any] = []
+    if profile:
+        who = " ".join(x for x in (profile.get("prenom"), profile.get("nom")) if x)
+        line = Text(who or "Étudiant", style="header")
+        meta = " · ".join(x for x in (profile.get("filiere"), profile.get("niveau")) if x)
+        if meta:
+            line.append(f"  {meta}", style="muted")
+        parts.append(line)
+    if semesters:
+        parts.append(semesters_table(semesters[-4:]))
+    if changes:
+        parts.append(changes_table(changes[:8]))
+    parts.append(freshness_table(store_dir, freshness))
+    return Group(*parts)
+
+
 def freshness_table(store_dir: str, freshness: dict[str, str | None]) -> Table:
     table = data_table(f"State store: {store_dir}", ["Resource", "Fetched at (UTC)"], [])
     for name, ts in freshness.items():

@@ -40,7 +40,7 @@ def _emit_json(data) -> None:
 
 app = typer.Typer(
     name="schoolapp",
-    no_args_is_help=True,
+    no_args_is_help=False,  # bare `schoolapp` renders the dashboard (help when store empty)
     help=(
         "ENSAM SchoolApp toolkit - one front-end over the shared library, state "
         "store and API.\n\n"
@@ -88,7 +88,7 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", callback=_version_callback,
@@ -113,6 +113,9 @@ def main(
     banner()
     if config:
         log("INFO", f"Config loaded from {config}")
+
+    if ctx.invoked_subcommand is None:
+        _dashboard_impl(json_out=False)
 
 
 @app.command("doctor")
@@ -284,6 +287,51 @@ def status_cmd(json_out: bool = JSON_OPT) -> None:
     console.print(render.freshness_table(str(store.state_dir()), fresh))
     if not any(fresh.values()):
         err_console.print("[warning]Store is empty - run `schoolapp fetch-all` or the watcher first.[/warning]")
+
+
+def _dashboard_impl(json_out: bool) -> None:
+    fresh = store.freshness(STORE_RESOURCES)
+    if not any(fresh.values()):
+        if json_out:
+            _emit_json(None)
+            return
+        render.console.print(render.empty_hint("data"))
+        render.console.print("Run [accent]schoolapp --help[/accent] to see all commands.")
+        return
+    profile_env = store.load_resource("student/profile")
+    sems_env = store.load_resource("student/semesters")
+    changes = store.read_changes(limit=8)
+    if json_out:
+        _emit_json({"profile": (profile_env or {}).get("data"),
+                    "semesters": (sems_env or {}).get("data") or [],
+                    "resources": fresh, "changes": changes})
+        return
+    render.console.print(render.dashboard_view(
+        (profile_env or {}).get("data"), (sems_env or {}).get("data") or [],
+        fresh, changes, str(store.state_dir())))
+
+
+@app.command("dashboard")
+def dashboard(json_out: bool = JSON_OPT) -> None:
+    """Overview: who you are, latest results, store freshness, recent changes."""
+    _dashboard_impl(json_out=json_out)
+
+
+@app.command("changes")
+def changes_cmd(
+    limit: int = typer.Option(20, "--limit", "-n", help="Max entries (newest first)"),
+    type: str | None = typer.Option(None, "--type", help="Filter by change type (grades, rattrapage, absences…)"),
+    json_out: bool = JSON_OPT,
+) -> None:
+    """Change history - the same feed the email digests narrate."""
+    items = store.read_changes(limit=limit, type=type)
+    if json_out:
+        _emit_json(items)
+        return
+    if not items:
+        render.console.print(render.empty_hint("changes"))
+        return
+    render.console.print(render.changes_table(items))
 
 
 @app.command("serve")
