@@ -1,0 +1,38 @@
+{
+  "computed_marker": "*",
+  "colors": {
+    "ok":      {"hex": "#166534", "hex_bg": "#dcfce7", "rich": "bold green"},
+    "fail":    {"hex": "#991b1b", "hex_bg": "#fee2e2", "rich": "bold red"},
+    "rat":     {"hex": "#ca8a04", "hex_bg": "#fef9c3", "rich": "bold yellow"},
+    "info":    {"hex": "#6366f1", "hex_bg": "#e0e7ff", "rich": "cyan"},
+    "success": {"hex": "#16a34a", "hex_bg": "#dcfce7", "rich": "green"},
+    "warning": {"hex": "#ca8a04", "hex_bg": "#fef9c3", "rich": "yellow"},
+    "error":   {"hex": "#991b1b", "hex_bg": "#fee2e2", "rich": "bold red"},
+    "muted":   {"hex": "#374151", "hex_bg": "#f3f4f6", "rich": "dim"},
+    "header":  {"hex": "#7c3aed", "hex_bg": "#ede9fe", "rich": "bold magenta"},
+    "accent":  {"hex": "#0891b2", "hex_bg": "#cffafe", "rich": "cyan"}
+  },
+  "statuses": {
+    "VORD": {"symbol": "✓", "style": "ok"},
+    "VRAT": {"symbol": "✓ᴿ", "style": "ok"},
+    "V":    {"symbol": "✓", "style": "ok"},
+    "NV":   {"symbol": "✗", "style": "fail"},
+    "RAT":  {"symbol": "⚠", "style": "rat"}
+  },
+  "resources": [
+    {"id": "student/profile",         "name": "Profil étudiant",            "icon": "👤"},
+    {"id": "student/elements",        "name": "Notes des éléments",         "icon": "📊"},
+    {"id": "student/modules",         "name": "Résultats modules",          "icon": "📦"},
+    {"id": "student/semesters",       "name": "Résultats semestres",        "icon": "🧾"},
+    {"id": "student/years",           "name": "Résultats d'année",          "icon": "📅"},
+    {"id": "student/diploma",         "name": "Diplôme",                    "icon": "🎓"},
+    {"id": "student/courses",         "name": "Inscriptions aux cours",     "icon": "📚"},
+    {"id": "student/absences",        "name": "Absences",                   "icon": "🕐"},
+    {"id": "student/absence_summary", "name": "Bilan des absences",         "icon": "🧮"},
+    {"id": "student/sanctions",       "name": "Sanctions",                  "icon": "⚖️"},
+    {"id": "student/stats",           "name": "Statistiques des notes",     "icon": "📈"},
+    {"id": "student/documents",       "name": "Documents",                  "icon": "📄"},
+    {"id": "catalog/modules",         "name": "Catalogue des modules",      "icon": "🗂️"},
+    {"id": "catalog/filieres",        "name": "Filières",                   "icon": "🏫"}
+  ]
+}

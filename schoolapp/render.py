@@ -16,18 +16,9 @@ from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
 
-THEME = Theme({
-    "ok": "bold green",
-    "fail": "bold red",
-    "rat": "bold yellow",
-    "info": "cyan",
-    "success": "green",
-    "warning": "yellow",
-    "error": "bold red",
-    "muted": "dim",
-    "header": "bold magenta",
-    "accent": "cyan",
-})
+from . import tokens
+
+THEME = Theme({name: c["rich"] for name, c in tokens.load_tokens()["colors"].items()})
 
 console = Console(theme=THEME)
 err_console = Console(theme=THEME, stderr=True)

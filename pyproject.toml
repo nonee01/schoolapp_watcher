@@ -28,6 +28,9 @@ schoolapp-watch = "schoolapp.cli:app"
 [tool.setuptools]
 py-modules = ["schoolapp_watch"]
 
+[tool.setuptools.package-data]
+schoolapp = ["design_tokens.json"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["schoolapp*"]
