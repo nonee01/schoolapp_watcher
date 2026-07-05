@@ -11,7 +11,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from . import __version__, render, store
+from . import __version__, csvout, render, store
 from .client import CATALOG_PATH, FILIERES_PATH, SchoolAppClient
 from .extractors import crawl_catalog
 from .extractors.catalog_presets import (
@@ -332,6 +332,46 @@ def changes_cmd(
         render.console.print(render.empty_hint("changes"))
         return
     render.console.print(render.changes_table(items))
+
+
+_CSV_RESOURCES = {
+    "elements": "student/elements", "grades": "student/elements",
+    "modules": "student/modules", "semesters": "student/semesters",
+    "years": "student/years", "courses": "student/courses",
+    "absences": "student/absences", "stats": "student/stats",
+}
+
+
+@app.command("csv")
+def csv_cmd(
+    resource: str = typer.Argument(...,
+        help="elements|grades|modules|semesters|years|courses|absences|stats"),
+    out: str | None = typer.Option(None, "--out", "-o", help="Write to FILE instead of stdout"),
+    latest: bool = typer.Option(False, "--latest",
+        help="For elements/grades: only the latest académique year"),
+) -> None:
+    """Export marks (or the NoteRAT/exam ranking stats) as CSV for spreadsheets."""
+    name = _CSV_RESOURCES.get(resource.strip().lower())
+    if name is None:
+        err_console.print(render.error_panel(
+            f"Unknown resource '{resource}'.",
+            hint="Choose one of: " + ", ".join(sorted(set(_CSV_RESOURCES)))))
+        raise typer.Exit(code=2)
+    data, _ = _load(name)
+    if not data:
+        err_console.print(render.empty_hint(resource))
+        raise typer.Exit(code=1)
+    if name == "student/stats":
+        text = csvout.stats_to_csv(data)
+    else:
+        if latest and name == "student/elements":
+            data = _latest_au(data)
+        text = csvout.rows_to_csv(data)
+    if out:
+        Path(out).expanduser().write_text(text, encoding="utf-8")
+        log("SUCCESS", f"Wrote {len(data)} row(s) → {out}")
+    else:
+        typer.echo(text, nl=False)
 
 
 @app.command("explain")

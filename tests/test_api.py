@@ -111,3 +111,13 @@ def test_changes_endpoint(client, monkeypatch):
     assert client.get("/api/changes?limit=1").get_json()["count"] == 1
     monkeypatch.setenv("API_KEY", "sekrit")
     assert client.get("/api/changes").status_code == 401
+
+
+def test_csv_export_endpoint(client, monkeypatch):
+    r = client.get("/api/csv/grades")
+    assert r.status_code == 200 and r.mimetype == "text/csv"
+    text = r.get_data(as_text=True)
+    assert text.splitlines()[0].startswith("code,") and "API311" in text
+    assert client.get("/api/csv/nope").status_code == 404
+    monkeypatch.setenv("API_KEY", "sekrit")
+    assert client.get("/api/csv/grades").status_code == 401
