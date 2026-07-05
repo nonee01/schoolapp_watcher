@@ -426,6 +426,36 @@ def changes():
     return jsonify({"changes": items, "count": len(items)})
 
 
+_CSV_RESOURCES = {
+    "elements": "student/elements", "grades": "student/elements",
+    "modules": "student/modules", "semesters": "student/semesters",
+    "years": "student/years", "courses": "student/courses",
+    "absences": "student/absences", "stats": "student/stats",
+}
+
+
+@app.get("/api/csv/<resource>")
+def csv_export(resource: str):
+    """CSV of any tabular resource (marks, NoteRAT/exam ranking stats) for
+    spreadsheets. Same rows the CLI `schoolapp csv` writes."""
+    err = _auth()
+    if err:
+        return err
+    from . import csvout
+
+    name = _CSV_RESOURCES.get(resource.strip().lower())
+    if name is None:
+        return jsonify({"error": f"Unknown resource '{resource}'",
+                        "choices": sorted(set(_CSV_RESOURCES))}), 404
+    env = store.load_resource(name)
+    if env is None:
+        return jsonify({"error": f"No cached {name} yet"}), 404
+    data = env["data"]
+    text = csvout.stats_to_csv(data) if name == "student/stats" else csvout.rows_to_csv(data)
+    return app.response_class(text, mimetype="text/csv", headers={
+        "Content-Disposition": f'attachment; filename="{resource}.csv"'})
+
+
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=8787, threads=4)

@@ -205,3 +205,27 @@ def test_explain_command(tmp_path, monkeypatch):
     assert data["code"] == "API311" and data["steps"]
     missing = runner.invoke(app, ["explain", "ZZZ999"])
     assert missing.exit_code == 1
+
+
+def test_csv_command_stdout_and_file(tmp_path, monkeypatch):
+    _seed_store(tmp_path, monkeypatch)
+    # -q keeps stderr chrome out of stdout so the CSV is clean and pipeable
+    out = runner.invoke(app, ["-q", "csv", "grades"]).output
+    lines = [l for l in out.splitlines() if l]
+    assert lines[0].startswith("code,") and any("API311" in l for l in lines)
+
+    dest = tmp_path / "grades.csv"
+    result = runner.invoke(app, ["csv", "grades", "--latest", "--out", str(dest)])
+    assert result.exit_code == 0
+    body = dest.read_text().splitlines()
+    assert body[0].startswith("code,")
+    # --latest keeps one académique year only (24 current elements, not 46)
+    assert 1 < len(body) <= 25
+
+
+def test_csv_unknown_resource_and_empty_store(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    bad = runner.invoke(app, ["csv", "nope"])
+    assert bad.exit_code == 2 and "Unknown resource" in bad.output
+    empty = runner.invoke(app, ["csv", "grades"])
+    assert empty.exit_code == 1
