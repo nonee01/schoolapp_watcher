@@ -39,6 +39,8 @@ class ElementGrade:
     moy_sr: str = ""
     moy: str = ""
     decision: str = ""
+    moy_sr_computed: str = ""    # règlement Art. 7 — filled only when the portal lags
+    decision_computed: str = ""  # "VRAT"/"NV" from the module rollup (Art. 6/9)
     raw: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -62,6 +64,9 @@ class ModuleGrade:
     au: str = ""
     moy: str = ""
     decision: str = ""
+    moy_computed: str = ""       # Art. 9 final (capped at the bar when validated)
+    decision_computed: str = ""
+    coeff_assumed: bool = False  # True when coefficients were guessed (equal weights)
     raw: dict[str, str] = field(default_factory=dict)
 
 
