@@ -210,6 +210,52 @@ def annotate_student_data(data) -> list[str]:
     return lines
 
 
+# ── year validation (Art. 11/12; Art. 16 S5 not distinguishable here) ────
+
+def year_outcome(modules: list[dict], niveau: str) -> dict:
+    """Art. 11 (prépa) / Art. 12 (cycle ingénieur years) condition check over
+    module envelope rows. Uses *_computed values when official ones are absent
+    (and flags `computed: True`). Purely informative — the jury decides."""
+    bars = bars_for(niveau)
+    nv_max = 2 if (niveau or "").strip().upper()[:2] in PREPA_NIVEAUX else 3
+
+    used_computed = False
+    weighted: list[tuple[Decimal, Decimal]] = []
+    non_valides: list[str] = []
+    floor_breach: list[str] = []
+    for m in modules:
+        moy = parse_note(m.get("moy"))
+        dec = (m.get("decision") or "").strip()
+        if moy is None and m.get("moy_computed"):
+            moy, used_computed = parse_note(m.get("moy_computed")), True
+        if not dec and m.get("decision_computed"):
+            dec, used_computed = m["decision_computed"], True
+        if moy is None:
+            continue
+        mdef = None
+        for md in _preset_defs() + _catalog_defs():
+            if md.code.upper() == str(m.get("code", "")).upper():
+                mdef = md
+                break
+        coef = Decimal(str(mdef.coef_mod)) if mdef else Decimal(1)
+        weighted.append((moy, coef))
+        if dec.upper().startswith("NV"):
+            non_valides.append(str(m.get("code", "")))
+        if moy < bars.element_floor:
+            floor_breach.append(str(m.get("code", "")))
+
+    total = sum(w for _, w in weighted) or Decimal(1)
+    year_moy = sum(v * w for v, w in weighted) / total
+    conditions = {
+        "moyenne": year_moy >= bars.module_pass,
+        "nv_count": len(non_valides) <= nv_max,
+        "floor": not floor_breach,
+    }
+    return {"moy": fmt_note(year_moy), "non_valides": non_valides,
+            "floor_breach": floor_breach, "conditions": conditions,
+            "would_validate": all(conditions.values()), "computed": used_computed}
+
+
 # ── explanation (schoolapp explain CODE) ─────────────────────────────────
 
 def explain_element(code: str, items: list[dict]) -> dict | None:
