@@ -411,6 +411,13 @@ def filieres():
     return _from_store("catalog/filieres", "filieres")
 
 
+@app.get("/api/promo/<code>")
+def promo(code: str):
+    """The reconstructed (anonymized) promotion grade distribution for an element,
+    cached by `schoolapp promo <code>`. {eval: [[note, count], …]}."""
+    return _from_store(f"promo/{code.lower()}", "promo")
+
+
 @app.get("/api/changes")
 def changes():
     """The watcher's change history - the same feed the email digests narrate."""
