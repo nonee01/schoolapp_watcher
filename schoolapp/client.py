@@ -183,6 +183,7 @@ class SchoolAppClient:
         "cc": "NoteCC", "notecc": "NoteCC",
         "ex": "NoteEX", "noteex": "NoteEX",
         "tp": "NoteTP", "notetp": "NoteTP",
+        "rat": "NoteRAT", "noterat": "NoteRAT",
         "moy": "MoyElem", "moyelem": "MoyElem", "moyenne": "MoyElem",
     }
 
@@ -191,7 +192,8 @@ class SchoolAppClient:
         target = next((g for g in grades if g.code.upper() == code.upper()), None)
         if target is None:
             return []
-        notes = {"NoteCC": target.cc, "NoteEX": target.ex, "NoteTP": target.tp, "MoyElem": target.moy}
+        notes = {"NoteCC": target.cc, "NoteEX": target.ex, "NoteTP": target.tp,
+                 "NoteRAT": target.rat, "MoyElem": target.moy}
         wanted = self._EVAL_ALIASES.get(eval_kind.strip().lower())
         out: list[MarkStatistics] = []
         for eval_param in ([wanted] if wanted else list(notes)):
@@ -294,12 +296,15 @@ class SchoolAppClient:
     def _all_stats(self, grades: list[ElementGrade]) -> list[MarkStatistics]:
         out: list[MarkStatistics] = []
         for g in grades:
-            if not g.moy or g.moy == "--":
-                continue
-            html = self._get(STATS_PATH, eval="MoyElem", codeelem=g.code.upper(),
-                             au=g.au, note=g.moy)
-            stat = parse_mark_statistics(html, element=g.code.upper(), eval_kind="MoyElem",
-                                         au=g.au, note=g.moy)
-            if stat:
-                out.append(stat)
+            # (eval kind, note) pairs worth a popup: the element moyenne, and the
+            # rattrapage note when taken (promo stats over rattrapage takers).
+            for eval_kind, note in (("MoyElem", g.moy), ("NoteRAT", g.rat)):
+                if not note or note == "--":
+                    continue
+                html = self._get(STATS_PATH, eval=eval_kind, codeelem=g.code.upper(),
+                                 au=g.au, note=note)
+                stat = parse_mark_statistics(html, element=g.code.upper(), eval_kind=eval_kind,
+                                             au=g.au, note=note)
+                if stat:
+                    out.append(stat)
         return out
