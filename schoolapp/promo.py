@@ -12,6 +12,7 @@ therefore recovers the entire (anonymized) grade distribution of the promotion
 """
 from __future__ import annotations
 
+import math
 from typing import Callable
 
 # alias -> the portal's eval parameter (mirrors client._EVAL_ALIASES).
@@ -70,3 +71,85 @@ def expand_to_rows(element: str, eval_kind: str,
                          "rank": rank, "note": f"{note:.2f}"})
             rank += 1
     return rows
+
+
+def _median(steps: list[tuple[float, int]]) -> float:
+    notes: list[float] = []
+    for note, count in sorted(steps):
+        notes.extend([note] * count)
+    if not notes:
+        return 0.0
+    n = len(notes)
+    mid = n // 2
+    return notes[mid] if n % 2 else round((notes[mid - 1] + notes[mid]) / 2, 4)
+
+
+def _int(v):
+    try:
+        return int(float(str(v).strip()))
+    except (TypeError, ValueError):
+        return None
+
+
+def histogram_rows(code: str, level: str, eval: str,
+                   steps: list[tuple[float, int]], width: float = 1.0) -> list[dict]:
+    """Binned distribution: how many students fall in each [low, high) bin
+    (top bin closed). Percent is of the recovered total; cumulative is running."""
+    if not steps or width <= 0:
+        return []
+    total = sum(c for _, c in steps)
+    lo = math.floor(min(n for n, _ in steps) / width) * width
+    hi = math.ceil(max(n for n, _ in steps) / width) * width
+    nbins = max(1, round((hi - lo) / width))
+    counts = [0] * nbins
+    for note, count in steps:
+        idx = int((note - lo) / width)
+        if idx >= nbins:  # top edge closed
+            idx = nbins - 1
+        counts[idx] += count
+    rows, cumulative = [], 0
+    for i, c in enumerate(counts):
+        cumulative += c
+        rows.append({"code": code, "level": level, "eval": eval,
+                     "bin_low": round(lo + i * width, 4),
+                     "bin_high": round(lo + (i + 1) * width, 4),
+                     "count": c, "percent": round(100 * c / total, 4) if total else 0.0,
+                     "cumulative": cumulative})
+    return rows
+
+
+def distribution_rows(code: str, level: str, eval: str,
+                      steps: list[tuple[float, int]]) -> list[dict]:
+    """Exact reconstructed distribution, best note first. rank_top = the rank of
+    the best-scoring student holding that note (1 for the max)."""
+    rows, rank = [], 1
+    for note, count in sorted(steps, key=lambda s: s[0], reverse=True):
+        rows.append({"code": code, "level": level, "eval": eval,
+                     "note": f"{note:.2f}", "count": count, "rank_top": rank})
+        rank += count
+    return rows
+
+
+def student_rows(code: str, level: str, eval: str,
+                 steps: list[tuple[float, int]]) -> list[dict]:
+    """One row per student position (anonymized), best = rank 1."""
+    rows = []
+    for r in expand_to_rows(code, eval, steps):
+        rows.append({"code": code, "level": level, "eval": eval,
+                     "rank": r["rank"], "note": r["note"]})
+    return rows
+
+
+def summary_row(code: str, level: str, eval: str, steps: list[tuple[float, int]],
+                aggregates: dict, your_note=None, your_rank=None,
+                au: str = "", filiere: str = "") -> dict:
+    """One-row promotion summary combining the free popup aggregates with the
+    reconstructed median and recovered count."""
+    return {"code": code, "level": level, "eval": eval, "au": au, "filiere": filiere,
+            "effectif": _int(aggregates.get("Effectif")),
+            "recovered": sum(c for _, c in steps),
+            "moyenne_promo": aggregates.get("Moyenne promo", ""),
+            "min": aggregates.get("Min", ""), "max": aggregates.get("Max", ""),
+            "ecart_type": aggregates.get("Ecart type", ""),
+            "median": _median(steps),
+            "your_note": your_note or "", "your_rank": your_rank or ""}
