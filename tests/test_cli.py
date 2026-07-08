@@ -242,17 +242,25 @@ class _PromoClient:
         n = float(note)
         return 1 + sum(1 for x in self.NOTES if x > n), len(self.NOTES)
 
+    def promo_aggregates(self, path, params):
+        return {"Effectif": "5", "Moyenne promo": "14.2", "Min": "8.0",
+                "Max": "20.0", "Ecart type": "4.0",
+                "Votre note": "12.0", "Votre classement": "4"}
+
 
 def test_promo_reconstructs_whole_promotion(tmp_path, monkeypatch):
     import csv as _csv
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
     monkeypatch.setattr(cli, "_library_client", lambda *a, **k: _PromoClient())
-    out = tmp_path / "promo.csv"
-    result = runner.invoke(app, ["-q", "promo", "API421", "--eval", "moy", "--out", str(out)])
-    assert result.exit_code == 0
-    rows = list(_csv.DictReader(out.open()))
+    out = tmp_path / "art"
+    result = runner.invoke(app, ["-q", "promo", "API421", "--eval", "moy",
+                                 "--out-dir", str(out), "--no-plot"])
+    assert result.exit_code == 0, result.output
+    for suffix in ("hist", "dist", "students", "summary"):        # all five artifacts
+        assert (out / f"promo_API421_MoyElem_{suffix}.csv").exists()
+    rows = list(_csv.DictReader((out / "promo_API421_MoyElem_students.csv").open()))
     assert len(rows) == 5                       # every student recovered
-    assert all(r["eval"] == "MoyElem" for r in rows)
+    assert all(r["eval"] == "MoyElem" and r["code"] == "API421" for r in rows)
     assert [r["note"] for r in rows] == ["20.00", "15.50", "15.50", "12.00", "8.00"]
     assert [r["rank"] for r in rows] == ["1", "2", "3", "4", "5"]
     assert store.load_resource("promo/api421") is not None   # cached for reuse

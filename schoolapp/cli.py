@@ -377,15 +377,82 @@ def csv_cmd(
         typer.echo(text, nl=False)
 
 
+def _promo_reconstruct_eval(client, agg_path, agg_params, probe, resolution):
+    """Return (steps, aggregates) for one eval, or None if the eval is unavailable."""
+    from . import promo as promo_mod
+    first = client.promo_aggregates(agg_path, {**agg_params, "note": "20"})
+    if not first:
+        return None
+    effectif = int(float(first.get("Effectif", "0") or 0))
+    if effectif <= 0:
+        return None
+    steps = promo_mod.reconstruct(
+        lambda n: (probe(n) or (1, effectif))[0], resolution=resolution)
+    return steps, first
+
+
+def _write_csv(path, rows, columns):
+    Path(path).write_text(csvout.rows_to_csv(rows, columns=columns), encoding="utf-8")
+    log("SUCCESS", f"Wrote {len(rows)} row(s) → {path}")
+
+
+def _emit_promo_artifacts(code, level, per_eval, out_dir, bin_width, plot, your=None, meta=None):
+    """Write 4 CSVs + optional PNG per eval into out_dir; persist store; print paths.
+
+    per_eval: list of (eval_label, steps, aggregates).
+    your:     eval_label → (your_note, your_rank).
+    meta:     eval_label → (au, filiere) for the summary."""
+    from . import promo as promo_mod
+    your = your or {}
+    meta = meta or {}
+    out = Path(out_dir).expanduser()
+    out.mkdir(parents=True, exist_ok=True)
+    summaries, cached = [], {}
+    for label, steps, aggr in per_eval:
+        yn, yr = your.get(label, ("", ""))
+        au, filiere = meta.get(label, ("", ""))
+        hist = promo_mod.histogram_rows(code, level, label, steps, width=bin_width)
+        dist = promo_mod.distribution_rows(code, level, label, steps)
+        studs = promo_mod.student_rows(code, level, label, steps)
+        summ = promo_mod.summary_row(code, level, label, steps, aggr,
+                                     your_note=yn, your_rank=yr, au=au, filiere=filiere)
+        base = out / f"promo_{code}_{label}"
+        _write_csv(f"{base}_hist.csv", hist,
+                   ["code", "level", "eval", "bin_low", "bin_high", "count", "percent", "cumulative"])
+        _write_csv(f"{base}_dist.csv", dist,
+                   ["code", "level", "eval", "note", "count", "rank_top"])
+        _write_csv(f"{base}_students.csv", studs,
+                   ["code", "level", "eval", "rank", "note"])
+        _write_csv(f"{base}_summary.csv", [summ],
+                   ["code", "level", "eval", "au", "filiere", "effectif", "recovered",
+                    "moyenne_promo", "min", "max", "ecart_type", "median", "your_note", "your_rank"])
+        if plot:
+            try:
+                from . import plots
+                mean = float(aggr["Moyenne promo"]) if aggr.get("Moyenne promo") else None
+                yn_f = float(yn) if yn else None
+                png = plots.histogram_png(hist, path=f"{base}_hist.png",
+                                          title=f"{code} · {label}",
+                                          subtitle=f"{filiere} {au}".strip(),
+                                          mean=mean, your_note=yn_f)
+                log("SUCCESS", f"Wrote {png}")
+            except RuntimeError as exc:
+                log("WARNING", f"Plot skipped: {exc}")
+        summaries.append(summ)
+        cached[label] = {"steps": [[n, c] for n, c in steps], "summary": summ, "bins": hist}
+    store.save_resource(f"promo/{code.lower()}", cached, source="promo")
+    return summaries
+
+
 @app.command("promo", rich_help_panel="Live (portal login)")
 def promo_cmd(
     ctx: typer.Context,
     code: str = typer.Argument(..., help="Element code, e.g. API421"),
     eval: str = typer.Option("rat,moy,ex,cc", "--eval",
         help="Comma list of evaluations: rat,moy,ex,cc,tp"),
-    au: str | None = typer.Option(None, "--au",
-        help="Année universitaire (default: the element's latest)"),
-    out: str | None = typer.Option(None, "--out", "-o", help="Write CSV to FILE (else stdout)"),
+    out_dir: str = typer.Option(".", "--out-dir", "-o", help="Directory for the CSV/PNG artifacts"),
+    bin: float = typer.Option(1.0, "--bin", min=0.1, help="Histogram bin width"),
+    no_plot: bool = typer.Option(False, "--no-plot", help="Skip the PNG figure"),
     resolution: float = typer.Option(0.01, help="Note granularity to resolve"),
     min_interval: float = typer.Option(0.25, min=0.0,
         help="Seconds between requests — be polite to the school server"),
@@ -393,54 +460,47 @@ def promo_cmd(
     password: str | None = typer.Option(None, help="SchoolApp password"),
     timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
 ) -> None:
-    """Reconstruct the WHOLE promotion's notes for an element (anonymized) as CSV.
+    """Reconstruct the WHOLE promotion's notes for an ELEMENT (anonymized).
 
-    The portal never exposes other students' names — but its stats endpoint
-    answers rank(note) for any hypothetical note, so sweeping that recovers every
-    grade in the promotion. Fires many rate-limited requests: expect a few minutes
-    per evaluation."""
+    Writes, per evaluation, a histogram CSV (how many got each mark), the exact
+    distribution, per-student rows, a stats summary, and a histogram PNG — all
+    named promo_<CODE>_<eval>_*. Fires many rate-limited requests."""
     from . import promo as promo_mod
+    from .client import STATS_PATH
 
     code = code.upper()
     client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
-    if not au:
-        target = next((g for g in client.element_grades() if g.code.upper() == code), None)
-        au = target.au if target else None
+    target = next((g for g in client.element_grades() if g.code.upper() == code), None)
+    au = target.au if target else None
     if not au:
         err_console.print(render.error_panel(
-            f"Could not resolve the année universitaire for {code}.",
-            hint="Pass --au 2025-2026 explicitly."))
-        raise typer.Exit(code=1)
+            f"Could not resolve the année universitaire for {code}."))
+        raise typer.Exit(code=2)
 
-    rows: list[dict] = []
-    cached: dict[str, list] = {}
+    per_eval, your = [], {}
     for ev in (_split_csv(eval) or ["rat", "moy", "ex", "cc"]):
-        first = client.rank_for_note(code, ev, au, 20)
-        if not first:
-            log("WARNING", f"{ev.upper()} unavailable for {code} — skipping")
+        eval_param = SchoolAppClient._EVAL_ALIASES.get(ev.strip().lower(), ev)
+        label = promo_mod.EVAL_LABELS.get(ev.strip().lower(), eval_param)
+        agg_params = {"eval": eval_param, "codeelem": code, "au": au}
+        with err_console.status(f"Reconstructing {code} · {label}…"):
+            res = _promo_reconstruct_eval(
+                client, STATS_PATH, agg_params,
+                lambda n, e=ev: client.rank_for_note(code, e, au, n),
+                resolution)
+        if not res:
+            log("WARNING", f"{label} unavailable for {code} — skipping")
             continue
-        effectif = first[1]
-        label = promo_mod.EVAL_LABELS.get(ev.strip().lower(), ev)
-        with err_console.status(f"Reconstructing {code} · {label} — {effectif} students…"):
-            steps = promo_mod.reconstruct(
-                lambda n, e=ev: (client.rank_for_note(code, e, au, n) or (1, effectif))[0],
-                resolution=resolution)
-        ev_rows = promo_mod.expand_to_rows(code, label, steps)
-        log("SUCCESS", f"{label}: recovered {len(ev_rows)}/{effectif} notes")
-        rows.extend(ev_rows)
-        cached[label] = [[n, c] for n, c in steps]
+        steps, aggr = res
+        per_eval.append((label, steps, aggr))
+        your[label] = (aggr.get("Votre note", ""), aggr.get("Votre classement", ""))
+        log("SUCCESS", f"{label}: recovered {sum(c for _, c in steps)} notes")
 
-    if not rows:
+    if not per_eval:
         err_console.print(render.error_panel(f"No promotion data reconstructed for {code}."))
-        raise typer.Exit(code=1)
-
-    store.save_resource(f"promo/{code.lower()}", cached, source="promo")
-    text = csvout.rows_to_csv(rows, columns=["element", "eval", "rank", "note"])
-    if out:
-        Path(out).expanduser().write_text(text, encoding="utf-8")
-        log("SUCCESS", f"Wrote {len(rows)} note(s) → {out}")
-    else:
-        typer.echo(text, nl=False)
+        raise typer.Exit(code=2)
+    # element rows carry no filière; au is the resolved element au
+    meta = {label: (au, "") for label, _, _ in per_eval}
+    _emit_promo_artifacts(code, "element", per_eval, out_dir, bin, not no_plot, your, meta)
 
 
 @app.command("explain", rich_help_panel="Read (offline · store)")
