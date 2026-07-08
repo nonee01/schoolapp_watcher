@@ -5,3 +5,4 @@ typer==0.16.0
 tomli==2.2.1
 flask==3.1.1
 waitress==3.0.1
+matplotlib==3.11.0
