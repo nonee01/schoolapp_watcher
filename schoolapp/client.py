@@ -54,6 +54,8 @@ ABSENCES_PATH = "/student/absence/bilan"
 SANCTIONS_PATH = "/student/absence/sanctions"
 COURSES_PATH = "/student/inscriptioncours"
 STATS_PATH = "/notes-stat/elemevalsat"
+SEM_STATS_PATH = "/notes-stat/semsat"
+YEAR_STATS_PATH = "/notes-stat/anneesat"
 CATALOG_PATH = "/plan-etudes-view/modules"
 FILIERES_PATH = "/plan-etudes-view/filieres"
 
@@ -194,6 +196,21 @@ class SchoolAppClient:
         "moy": "MoyElem", "moyelem": "MoyElem", "moyenne": "MoyElem",
     }
 
+    def _stat_probe(self, path: str, params: dict) -> dict[str, str]:
+        """One GET to a /notes-stat popup with a HYPOTHETICAL note. Returns the
+        popup's label->value dict, or {} if the eval is unavailable."""
+        html = self._get(path, **{k: str(v) for k, v in params.items()})
+        stat = parse_mark_statistics(html)
+        if not stat:
+            return {}
+        return {r[0]: r[1] for r in stat.rows if len(r) >= 2}
+
+    def _rank_effectif(self, d: dict[str, str]) -> tuple[int, int] | None:
+        rank, effectif = _as_int(d.get("Votre classement")), _as_int(d.get("Effectif"))
+        if rank is None or effectif is None:
+            return None
+        return rank, effectif
+
     def rank_for_note(self, code: str, eval_kind: str, au: str,
                       note: float | str) -> tuple[int, int] | None:
         """One probe of the promo-stats endpoint with a HYPOTHETICAL note.
@@ -201,17 +218,28 @@ class SchoolAppClient:
         or None if the eval is unavailable for this element. Basis of the
         promotion-distribution reconstruction (see promo.reconstruct)."""
         eval_param = self._EVAL_ALIASES.get(eval_kind.strip().lower(), eval_kind)
-        html = self._get(STATS_PATH, eval=eval_param, codeelem=code.upper(),
-                         au=au, note=str(note))
-        stat = parse_mark_statistics(html, element=code.upper(), eval_kind=eval_param,
-                                     au=au, note=str(note))
-        if not stat:
-            return None
-        d = {r[0]: r[1] for r in stat.rows if len(r) >= 2}
-        rank, effectif = _as_int(d.get("Votre classement")), _as_int(d.get("Effectif"))
-        if rank is None or effectif is None:
-            return None
-        return rank, effectif
+        d = self._stat_probe(STATS_PATH, {"eval": eval_param, "codeelem": code.upper(),
+                                          "au": au, "note": note})
+        return self._rank_effectif(d) if d else None
+
+    def rank_for_note_sem(self, niveau: str, filiere: str, semestre: str, au: str,
+                          note: float | str) -> tuple[int, int] | None:
+        """Semester-level probe (/notes-stat/semsat, eval=MoySem)."""
+        d = self._stat_probe(SEM_STATS_PATH, {"eval": "MoySem", "niveau": niveau,
+                             "filiere": filiere, "semestre": semestre, "au": au, "note": note})
+        return self._rank_effectif(d) if d else None
+
+    def rank_for_note_year(self, niveau: str, filiere: str, au: str,
+                           note: float | str) -> tuple[int, int] | None:
+        """Année-level probe (/notes-stat/anneesat, eval=MoyAn)."""
+        d = self._stat_probe(YEAR_STATS_PATH, {"eval": "MoyAn", "niveau": niveau,
+                             "filiere": filiere, "au": au, "note": note})
+        return self._rank_effectif(d) if d else None
+
+    def promo_aggregates(self, path: str, params: dict) -> dict[str, str]:
+        """The constant aggregates (Moyenne promo/Min/Max/Ecart type/Effectif) a
+        single popup returns - caller supplies `note` in params."""
+        return self._stat_probe(path, params)
 
     def mark_statistics(self, code: str, eval_kind: str = "all") -> list[MarkStatistics]:
         grades = parse_element_grades(self._get(ELEMENTS_PATH))
