@@ -288,8 +288,11 @@ def test_promo_sem_resolves_label_and_writes_artifacts(tmp_path, monkeypatch):
     result = runner.invoke(app, ["promo-sem", "S1", "--out-dir", str(out), "--no-plot"])
     assert result.exit_code == 0, result.output
     assert (out / "promo_S1_MoySem_hist.csv").exists()
-    assert (out / "promo_S1_MoySem_summary.csv").exists()
-    assert "API-MPT" in (out / "promo_S1_MoySem_summary.csv").read_text()
+    import csv as _csv
+    summ = next(iter(_csv.DictReader((out / "promo_S1_MoySem_summary.csv").open())))
+    assert summ["filiere"] == "API-MPT" and summ["au"] == "2024-2025"
+    # your_note/your_rank come from the student's real row, NOT the note=20 probe
+    assert summ["your_note"] == "12.573" and summ["your_rank"] == "224 / 423"
 
 
 def test_promo_sem_unknown_label_exits_2(tmp_path, monkeypatch):
@@ -326,3 +329,6 @@ def test_promo_year_resolves_label(tmp_path, monkeypatch):
     result = runner.invoke(app, ["promo-year", "2A", "--out-dir", str(out), "--no-plot"])
     assert result.exit_code == 0, result.output
     assert (out / "promo_2A_MoyAn_dist.csv").exists()
+    import csv as _csv
+    summ = next(iter(_csv.DictReader((out / "promo_2A_MoyAn_summary.csv").open())))
+    assert summ["your_note"] == "12.824" and summ["your_rank"] == "125 / 419"
