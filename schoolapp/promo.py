@@ -1,14 +1,16 @@
 """Promotion grade-distribution reconstruction.
 
 The portal never lists other students' notes with names — you only ever see
-your own note plus aggregate stats and your rank. But its per-element stats
-endpoint answers, for ANY hypothetical note you feed it,
+your own note plus aggregate stats and your rank. But its stats endpoints
+answer, for ANY hypothetical note you feed them,
 
     rank(note) = 1 + #{students scoring strictly above `note`}
 
 which is monotonic non-increasing in note. Sweeping `note` across [lo, hi]
 therefore recovers the entire (anonymized) grade distribution of the promotion
-— every note, no identities. This is the "Notes RATT" curve reconstruction.
+— every note, no identities. The same sweep works at every level:
+`/notes-stat/elemevalsat` (element), `/notes-stat/semsat` (semester moyenne),
+and `/notes-stat/anneesat` (année moyenne); only the probe's parameters differ.
 """
 from __future__ import annotations
 

@@ -73,6 +73,37 @@ Resources: `elements`/`grades`, `modules`, `semesters`, `years`, `courses`,
 `absences`, `stats`. The same rows are available over HTTP at
 `GET /api/csv/<resource>`.
 
+### Whole-promotion notes (anonymized)
+
+```bash
+schoolapp promo API421 --eval rat,moy,ex,cc -o out/   # one element
+schoolapp promo-sem S1  -o out/                        # a whole semester
+schoolapp promo-year 2A -o out/                        # a whole year
+```
+
+Recovers **every student's note** across the whole promotion — without names,
+which the portal never exposes. It works because the stats endpoint answers
+`rank(note)` for any hypothetical note, so sweeping that value traces the full
+grade distribution. Endpoints: `/notes-stat/elemevalsat` (element),
+`/notes-stat/semsat` (semester), `/notes-stat/anneesat` (année). Target a
+semester by its label (`S1`…`S4`) and a year by its niveau (`1A`, `2A`); the
+année universitaire and filière are resolved from your own rows automatically.
+
+Each run writes, per evaluation, into `--out-dir` (default `.`), all keyed by
+the code (`API421`, `S1`, `2A`):
+
+| File | Contents |
+|------|----------|
+| `promo_<code>_<eval>_hist.csv` | binned histogram — how many got each mark (`bin_low,bin_high,count,percent,cumulative`) |
+| `promo_<code>_<eval>_dist.csv` | exact reconstructed distribution (`note,count,rank_top`) |
+| `promo_<code>_<eval>_students.csv` | one anonymized row per student (`rank,note`) |
+| `promo_<code>_<eval>_summary.csv` | effectif, moyenne promo, min/max/écart-type, median, your note/rank |
+| `promo_<code>_<eval>_hist.png` | histogram figure (mean + your-note markers); needs matplotlib, `--no-plot` to skip |
+
+Fires many **rate-limited** requests (`--min-interval`, default 0.25 s) — expect
+a few minutes per evaluation. `--bin` sets the histogram bin width (default 1.0).
+The reconstruction is cached and served at `GET /api/promo/<code>`.
+
 ## Common Commands
 
 ```bash
