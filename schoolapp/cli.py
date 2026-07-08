@@ -377,10 +377,15 @@ def csv_cmd(
         typer.echo(text, nl=False)
 
 
-def _promo_reconstruct_eval(client, agg_path, agg_params, probe, resolution):
-    """Return (steps, aggregates) for one eval, or None if the eval is unavailable."""
+def _promo_reconstruct_eval(client, agg_path, agg_params, probe, resolution, real_note="20"):
+    """Return (steps, aggregates) for one eval, or None if the eval is unavailable.
+
+    The aggregate popup is probed at `real_note` (the student's own note when
+    known) so its 'Votre note'/'Votre classement' reflect the real value, not a
+    hypothetical — the constant aggregates (effectif/moyenne/min/max) are the
+    same at any note."""
     from . import promo as promo_mod
-    first = client.promo_aggregates(agg_path, {**agg_params, "note": "20"})
+    first = client.promo_aggregates(agg_path, {**agg_params, "note": str(real_note or "20")})
     if not first:
         return None
     effectif = int(float(first.get("Effectif", "0") or 0))
@@ -477,16 +482,20 @@ def promo_cmd(
             f"Could not resolve the année universitaire for {code}."))
         raise typer.Exit(code=2)
 
+    note_by_eval = {"NoteCC": target.cc, "NoteEX": target.ex, "NoteTP": target.tp,
+                    "NoteRAT": target.rat, "MoyElem": target.moy}
     per_eval, your = [], {}
     for ev in (_split_csv(eval) or ["rat", "moy", "ex", "cc"]):
         eval_param = SchoolAppClient._EVAL_ALIASES.get(ev.strip().lower(), ev)
         label = promo_mod.EVAL_LABELS.get(ev.strip().lower(), eval_param)
         agg_params = {"eval": eval_param, "codeelem": code, "au": au}
+        real = note_by_eval.get(eval_param, "")
+        real = real if real and real != "--" else "20"
         with err_console.status(f"Reconstructing {code} · {label}…"):
             res = _promo_reconstruct_eval(
                 client, STATS_PATH, agg_params,
                 lambda n, e=ev: client.rank_for_note(code, e, au, n),
-                resolution)
+                resolution, real_note=real)
         if not res:
             log("WARNING", f"{label} unavailable for {code} — skipping")
             continue
@@ -549,14 +558,14 @@ def promo_sem_cmd(
         res = _promo_reconstruct_eval(
             client, SEM_STATS_PATH, agg_params,
             lambda n: client.rank_for_note_sem(row.niveau, filiere, row.semestre, row.au, n),
-            resolution)
+            resolution, real_note=row.moy_sem or "20")
     if not res:
         err_console.print(render.error_panel(f"No promotion data for {code}."))
         raise typer.Exit(code=2)
     steps, aggr = res
     per_eval = [("MoySem", steps, aggr)]
     _emit_promo_artifacts(code, "semester", per_eval, out_dir, bin, not no_plot,
-                          {"MoySem": (aggr.get("Votre note", ""), aggr.get("Votre classement", ""))},
+                          {"MoySem": (row.moy_sem, row.classement)},
                           {"MoySem": (row.au, filiere)})
 
 
@@ -589,14 +598,14 @@ def promo_year_cmd(
         res = _promo_reconstruct_eval(
             client, YEAR_STATS_PATH, agg_params,
             lambda n: client.rank_for_note_year(row.niveau, row.filiere, row.au, n),
-            resolution)
+            resolution, real_note=row.moy_annee or "20")
     if not res:
         err_console.print(render.error_panel(f"No promotion data for {code}."))
         raise typer.Exit(code=2)
     steps, aggr = res
     per_eval = [("MoyAn", steps, aggr)]
     _emit_promo_artifacts(code, "year", per_eval, out_dir, bin, not no_plot,
-                          {"MoyAn": (aggr.get("Votre note", ""), aggr.get("Votre classement", ""))},
+                          {"MoyAn": (row.moy_annee, row.classement)},
                           {"MoyAn": (row.au, row.filiere)})
 
 
