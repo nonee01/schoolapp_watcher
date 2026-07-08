@@ -264,3 +264,65 @@ def test_promo_reconstructs_whole_promotion(tmp_path, monkeypatch):
     assert [r["note"] for r in rows] == ["20.00", "15.50", "15.50", "12.00", "8.00"]
     assert [r["rank"] for r in rows] == ["1", "2", "3", "4", "5"]
     assert store.load_resource("promo/api421") is not None   # cached for reuse
+
+
+def test_promo_sem_resolves_label_and_writes_artifacts(tmp_path, monkeypatch):
+    from schoolapp.models import SemesterResult
+
+    class StubClient:
+        def semester_results(self):
+            return [SemesterResult(niveau="1A", semestre="S1", au="2024-2025",
+                                   moy_sem="12.573", classement="224 / 423",
+                                   raw={"Filière": "API-MPT"})]
+        def rank_for_note_sem(self, niveau, filiere, semestre, au, note):
+            notes = [5.0, 12.0, 12.5, 20.0]
+            return 1 + sum(1 for n in notes if n > float(note)), len(notes)
+        def promo_aggregates(self, path, params):
+            return {"Effectif": "4", "Moyenne promo": "12.57", "Min": "5.0",
+                    "Max": "20.0", "Ecart type": "3.0", "Votre note": "12.573",
+                    "Votre classement": "224"}
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: StubClient())
+    out = tmp_path / "sem"
+    result = runner.invoke(app, ["promo-sem", "S1", "--out-dir", str(out), "--no-plot"])
+    assert result.exit_code == 0, result.output
+    assert (out / "promo_S1_MoySem_hist.csv").exists()
+    assert (out / "promo_S1_MoySem_summary.csv").exists()
+    assert "API-MPT" in (out / "promo_S1_MoySem_summary.csv").read_text()
+
+
+def test_promo_sem_unknown_label_exits_2(tmp_path, monkeypatch):
+    from schoolapp.models import SemesterResult
+
+    class StubClient:
+        def semester_results(self):
+            return [SemesterResult(niveau="1A", semestre="S1", au="2024-2025",
+                                   raw={"Filière": "API-MPT"})]
+
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: StubClient())
+    result = runner.invoke(app, ["promo-sem", "S9", "--out-dir", str(tmp_path)])
+    assert result.exit_code == 2
+
+
+def test_promo_year_resolves_label(tmp_path, monkeypatch):
+    from schoolapp.models import YearResult
+
+    class StubClient:
+        def year_results(self):
+            return [YearResult(niveau="2A", filiere="API-MPT", au="2025-2026",
+                               moy_annee="12.824", classement="125 / 419")]
+        def rank_for_note_year(self, niveau, filiere, au, note):
+            notes = [5.0, 12.0, 20.0]
+            return 1 + sum(1 for n in notes if n > float(note)), len(notes)
+        def promo_aggregates(self, path, params):
+            return {"Effectif": "3", "Moyenne promo": "12.05", "Min": "5.0",
+                    "Max": "20.0", "Ecart type": "3.0", "Votre note": "12.824",
+                    "Votre classement": "125"}
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "_library_client", lambda *a, **k: StubClient())
+    out = tmp_path / "yr"
+    result = runner.invoke(app, ["promo-year", "2A", "--out-dir", str(out), "--no-plot"])
+    assert result.exit_code == 0, result.output
+    assert (out / "promo_2A_MoyAn_dist.csv").exists()

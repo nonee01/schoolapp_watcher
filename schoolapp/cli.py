@@ -503,6 +503,103 @@ def promo_cmd(
     _emit_promo_artifacts(code, "element", per_eval, out_dir, bin, not no_plot, your, meta)
 
 
+def _resolve_sem_row(rows, label):
+    if not rows:
+        return None
+    if not label:
+        return rows[-1]
+    return next((r for r in rows if r.semestre.upper() == label.upper()), None)
+
+
+def _resolve_year_row(rows, label):
+    if not rows:
+        return None
+    if not label:
+        return rows[-1]
+    return next((r for r in rows if r.niveau.upper() == label.upper()), None)
+
+
+@app.command("promo-sem", rich_help_panel="Live (portal login)")
+def promo_sem_cmd(
+    ctx: typer.Context,
+    semestre: Optional[str] = typer.Argument(None, help="Semester label, e.g. S1 S2 S3 S4 (default: latest)"),
+    out_dir: str = typer.Option(".", "--out-dir", "-o", help="Directory for the CSV/PNG artifacts"),
+    bin: float = typer.Option(1.0, "--bin", min=0.1, help="Histogram bin width"),
+    no_plot: bool = typer.Option(False, "--no-plot", help="Skip the PNG figure"),
+    resolution: float = typer.Option(0.01, help="Note granularity to resolve"),
+    min_interval: float = typer.Option(0.25, min=0.0, help="Seconds between requests"),
+    email: str | None = typer.Option(None, help="SchoolApp email"),
+    password: str | None = typer.Option(None, help="SchoolApp password"),
+    timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
+) -> None:
+    """Reconstruct the WHOLE promotion's SEMESTER moyennes (anonymized)."""
+    from .client import SEM_STATS_PATH
+    client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
+    rows = client.semester_results()
+    row = _resolve_sem_row(rows, semestre)
+    if not row:
+        labels = ", ".join(sorted({r.semestre for r in rows})) or "none"
+        err_console.print(render.error_panel(
+            f"Semester {semestre!r} not found.", hint=f"Available: {labels}"))
+        raise typer.Exit(code=2)
+    code, filiere = row.semestre.upper(), row.raw.get("Filière", "")
+    agg_params = {"eval": "MoySem", "niveau": row.niveau, "filiere": filiere,
+                  "semestre": row.semestre, "au": row.au}
+    with err_console.status(f"Reconstructing {code} · MoySem…"):
+        res = _promo_reconstruct_eval(
+            client, SEM_STATS_PATH, agg_params,
+            lambda n: client.rank_for_note_sem(row.niveau, filiere, row.semestre, row.au, n),
+            resolution)
+    if not res:
+        err_console.print(render.error_panel(f"No promotion data for {code}."))
+        raise typer.Exit(code=2)
+    steps, aggr = res
+    per_eval = [("MoySem", steps, aggr)]
+    _emit_promo_artifacts(code, "semester", per_eval, out_dir, bin, not no_plot,
+                          {"MoySem": (aggr.get("Votre note", ""), aggr.get("Votre classement", ""))},
+                          {"MoySem": (row.au, filiere)})
+
+
+@app.command("promo-year", rich_help_panel="Live (portal login)")
+def promo_year_cmd(
+    ctx: typer.Context,
+    niveau: Optional[str] = typer.Argument(None, help="Year label, e.g. 1A 2A (default: latest)"),
+    out_dir: str = typer.Option(".", "--out-dir", "-o", help="Directory for the CSV/PNG artifacts"),
+    bin: float = typer.Option(1.0, "--bin", min=0.1, help="Histogram bin width"),
+    no_plot: bool = typer.Option(False, "--no-plot", help="Skip the PNG figure"),
+    resolution: float = typer.Option(0.01, help="Note granularity to resolve"),
+    min_interval: float = typer.Option(0.25, min=0.0, help="Seconds between requests"),
+    email: str | None = typer.Option(None, help="SchoolApp email"),
+    password: str | None = typer.Option(None, help="SchoolApp password"),
+    timeout: int = typer.Option(20, min=5, help="HTTP timeout in seconds"),
+) -> None:
+    """Reconstruct the WHOLE promotion's ANNÉE moyennes (anonymized)."""
+    from .client import YEAR_STATS_PATH
+    client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
+    rows = client.year_results()
+    row = _resolve_year_row(rows, niveau)
+    if not row:
+        labels = ", ".join(sorted({r.niveau for r in rows})) or "none"
+        err_console.print(render.error_panel(
+            f"Year {niveau!r} not found.", hint=f"Available: {labels}"))
+        raise typer.Exit(code=2)
+    code = row.niveau.upper()
+    agg_params = {"eval": "MoyAn", "niveau": row.niveau, "filiere": row.filiere, "au": row.au}
+    with err_console.status(f"Reconstructing {code} · MoyAn…"):
+        res = _promo_reconstruct_eval(
+            client, YEAR_STATS_PATH, agg_params,
+            lambda n: client.rank_for_note_year(row.niveau, row.filiere, row.au, n),
+            resolution)
+    if not res:
+        err_console.print(render.error_panel(f"No promotion data for {code}."))
+        raise typer.Exit(code=2)
+    steps, aggr = res
+    per_eval = [("MoyAn", steps, aggr)]
+    _emit_promo_artifacts(code, "year", per_eval, out_dir, bin, not no_plot,
+                          {"MoyAn": (aggr.get("Votre note", ""), aggr.get("Votre classement", ""))},
+                          {"MoyAn": (row.au, row.filiere)})
+
+
 @app.command("explain", rich_help_panel="Read (offline · store)")
 def explain(
     code: str = typer.Argument(..., help="Element code, e.g. API421"),
