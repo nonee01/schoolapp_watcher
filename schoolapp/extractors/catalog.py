@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable
 from bs4 import BeautifulSoup
 
 from ..models import CatalogElement, CatalogModule, Filiere
-from ._tables import normalize_cell, table_by_headers
+from ._tables import normalize_cell, row_to_dict, table_by_headers
 
 CATALOG_PATH = "/plan-etudes-view/modules"
 FILIERES_PATH = "/plan-etudes-view/filieres"
@@ -63,7 +63,7 @@ def parse_catalog_modules(html: str, filiere: str = "") -> list[CatalogModule]:
         if nested is None:
             cells = [normalize_cell(td.get_text(" ", strip=True)) for td in tds]
             values = cells[1:]  # skip the expand-button column
-            raw = {h: (values[i] if i < len(values) else "") for i, h in enumerate(_MODULE_HEADERS)}
+            raw = row_to_dict(_MODULE_HEADERS, values)
             if not raw.get("CodeMod"):
                 continue  # the empty-combo placeholder row
             current = CatalogModule(
@@ -86,7 +86,7 @@ def parse_catalog_modules(html: str, filiere: str = "") -> list[CatalogModule]:
                 ntds = [normalize_cell(td.get_text(" ", strip=True)) for td in ntr.find_all("td")]
                 if not ntds or not ntds[0]:
                     continue
-                nraw = {h: (ntds[i] if i < len(ntds) else "") for i, h in enumerate(headers)}
+                nraw = row_to_dict(headers, ntds)
                 current.elements.append(CatalogElement(
                     code=nraw.get("CodeElem", ""),
                     intitule=nraw.get("Intitule", ""),
@@ -104,13 +104,14 @@ def parse_catalog_modules(html: str, filiere: str = "") -> list[CatalogModule]:
 
 
 def parse_filieres(html: str) -> list[Filiere]:
+    """The /plan-etudes-view/filieres table. Returns [] if the table or its header signature is absent."""
     found = table_by_headers(html, FILIERE_SIGNATURE)
     if not found:
         return []
     headers, rows = found
     out: list[Filiere] = []
     for r in rows:
-        raw = {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
+        raw = row_to_dict(headers, r)
         if not raw.get("Code"):
             continue
         out.append(Filiere(code=raw["Code"], label=raw.get("Intitule", ""), raw=raw))

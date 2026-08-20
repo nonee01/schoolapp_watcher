@@ -3,7 +3,7 @@ from __future__ import annotations
 from bs4 import BeautifulSoup
 
 from ..models import Absence, Sanction
-from ._tables import normalize_cell, register, table_by_headers
+from ._tables import normalize_cell, register, row_to_dict, table_by_headers
 
 ABSENCE_SIGNATURE = {"Element", "Date", "Seance"}
 SUMMARY_SIGNATURE = {"CodeElem", "Non Justifiée", "Justifiée"}
@@ -24,7 +24,7 @@ def parse_absences(html: str) -> list[Absence]:
         element = cell("Element")
         if not element:
             continue
-        raw = {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
+        raw = row_to_dict(headers, r)
         out.append(Absence(
             element=element,
             date=cell("Date").split(" ")[0],
@@ -42,11 +42,7 @@ def parse_absence_summary(html: str) -> list[dict[str, str]]:
     if not found:
         return []
     headers, rows = found
-    return [
-        {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
-        for r in rows
-        if r and r[0]
-    ]
+    return [row_to_dict(headers, r) for r in rows if r and r[0]]
 
 
 def parse_sanctions(html: str) -> list[Sanction]:

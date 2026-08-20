@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 from ..models import CourseEnrollment
-from ._tables import register, table_by_headers
+from ._tables import register, row_to_dict, table_by_headers
 
 COURSE_SIGNATURE = {"CodeElem", "Statut", "Num"}
 
 
 def parse_courses(html: str) -> list[CourseEnrollment]:
+    """The course-enrollment table (section/groupe/sous-groupe per element). Returns [] if the
+    table or its header signature is absent."""
     found = table_by_headers(html, COURSE_SIGNATURE)
     if not found:
         return []
     headers, rows = found
     out: list[CourseEnrollment] = []
     for r in rows:
-        raw = {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
+        raw = row_to_dict(headers, r)
         if not raw.get("CodeElem"):
             continue
         out.append(CourseEnrollment(

@@ -29,6 +29,11 @@ _FIELD_LABELS = {
 
 
 def parse_profile(html: str) -> StudentProfile:
+    """The /index profile blocks (see module docstring for the row shape).
+
+    Any field absent from the page (missing `<th>` label, or the page failed to load) comes back
+    as "" rather than raising — every StudentProfile field defaults to "" via _FIELD_LABELS.get.
+    """
     soup = BeautifulSoup(html, "html.parser")
     raw: dict[str, str] = {}
     for tr in soup.find_all("tr"):

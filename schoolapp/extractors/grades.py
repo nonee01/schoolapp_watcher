@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from ..models import ElementGrade, ModuleGrade
-from ._tables import register, table_by_headers
+from ._tables import register, row_to_dict, table_by_headers
 
 ELEMENT_SIGNATURE = {"CodeElem", "AU", "Moy"}
 MODULE_SIGNATURE = {"CodeMod", "AU", "Moy"}
-
-
-def _row_map(headers: list[str], row: list[str]) -> dict[str, str]:
-    return {h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)}
 
 
 def parse_element_grades(html: str) -> list[ElementGrade]:
@@ -19,7 +15,7 @@ def parse_element_grades(html: str) -> list[ElementGrade]:
     headers, rows = found
     out: list[ElementGrade] = []
     for r in rows:
-        raw = _row_map(headers, r)
+        raw = row_to_dict(headers, r)
         if not raw.get("CodeElem"):
             continue
         out.append(ElementGrade(
@@ -46,7 +42,7 @@ def parse_module_grades(html: str) -> list[ModuleGrade]:
     headers, rows = found
     out: list[ModuleGrade] = []
     for r in rows:
-        raw = _row_map(headers, r)
+        raw = row_to_dict(headers, r)
         if not raw.get("CodeMod"):
             continue
         out.append(ModuleGrade(

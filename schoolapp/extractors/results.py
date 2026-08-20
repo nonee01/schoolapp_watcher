@@ -3,7 +3,7 @@ from __future__ import annotations
 from bs4 import BeautifulSoup
 
 from ..models import DiplomaResult, SemesterResult, YearResult
-from ._tables import normalize_cell, register
+from ._tables import normalize_cell, register, row_to_dict
 
 SEMESTER_SIGNATURE = {"Semestre", "Moy SEM"}
 YEAR_SIGNATURE = {"Niveau", "AU", "Moy Année"}
@@ -23,7 +23,7 @@ def _rows_with_links(html: str, wanted: set[str]) -> tuple[list[str], list[tuple
             cells = [normalize_cell(td.get_text(" ", strip=True)) for td in tds]
             if not cells or not any(cells):
                 continue
-            raw = {h: (cells[i] if i < len(cells) else "") for i, h in enumerate(headers)}
+            raw = row_to_dict(headers, cells)
             a = tr.find("a", href=True)
             rows.append((raw, a["href"] if a else ""))
         return headers, rows
@@ -31,6 +31,8 @@ def _rows_with_links(html: str, wanted: set[str]) -> tuple[list[str], list[tuple
 
 
 def parse_semester_results(html: str) -> list[SemesterResult]:
+    """The per-semester results table (Niveau/Semestre/Moy SEM/Decision + relevé link).
+    Returns [] if the table or its header signature is absent."""
     _, rows = _rows_with_links(html, SEMESTER_SIGNATURE)
     out: list[SemesterResult] = []
     for raw, href in rows:
@@ -51,6 +53,8 @@ def parse_semester_results(html: str) -> list[SemesterResult]:
 
 
 def parse_year_results(html: str) -> list[YearResult]:
+    """The per-year results table (Niveau/AU/Moy Année/Decision + relevé link).
+    Returns [] if the table or its header signature is absent."""
     _, rows = _rows_with_links(html, YEAR_SIGNATURE)
     out: list[YearResult] = []
     for raw, href in rows:
@@ -84,7 +88,7 @@ def parse_diploma(html: str) -> DiplomaResult:
             if not tds or not any(tds):
                 continue
             if headers:
-                rows.append({h: (tds[i] if i < len(tds) else "") for i, h in enumerate(headers)})
+                rows.append(row_to_dict(headers, tds))
             else:
                 rows.append({str(i): v for i, v in enumerate(tds)})
         if rows:

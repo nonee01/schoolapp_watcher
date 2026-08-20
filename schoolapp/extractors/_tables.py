@@ -20,6 +20,11 @@ def normalize_cell(text: str) -> str:
     return " ".join(text.split())
 
 
+def row_to_dict(headers: list[str], row: list[str]) -> dict[str, str]:
+    """Zip a data row against its header row; a short row (ragged HTML) fills missing cells with ""."""
+    return {h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)}
+
+
 def extract_table(html: str) -> tuple[list[str], list[list[str]]]:
     soup = BeautifulSoup(html, "html.parser")
     tables = soup.find_all("table")

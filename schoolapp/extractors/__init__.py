@@ -1,4 +1,4 @@
-from ._tables import REGISTRY, extract_table, fingerprint, normalize_cell, table_by_headers
+from ._tables import REGISTRY, extract_table, fingerprint, normalize_cell, row_to_dict, table_by_headers
 from .absences import parse_absence_summary, parse_absences, parse_sanctions
 from .catalog import crawl_catalog, parse_catalog_modules, parse_catalog_options, parse_filieres
 from .courses import parse_courses
@@ -29,5 +29,6 @@ __all__ = [
     "parse_sanctions",
     "parse_semester_results",
     "parse_year_results",
+    "row_to_dict",
     "table_by_headers",
 ]

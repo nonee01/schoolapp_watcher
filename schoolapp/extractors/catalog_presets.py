@@ -49,6 +49,8 @@ def _from_dict(d: dict) -> CatalogModule:
 
 
 def load_catalog_modules(directory: Path | None = None) -> list[CatalogModule]:
+    """Modules crawled by `schoolapp catalog crawl`. Returns [] if the catalog resource
+    was never written (no crawl has run yet)."""
     envelope = store.load_resource(CATALOG_RESOURCE, directory)
     if not envelope:
         return []
