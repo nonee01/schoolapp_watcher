@@ -1,18 +1,11 @@
 from __future__ import annotations
 
-import os
-
 import typer
-try:
-    import keyring
-except Exception:
-    keyring = None
 
 from ..calculator import list_modules, run_calculator
-from ..utils import AppContext
+from ..utils import AppContext, resolve_or_raise
 from ..watcher import check_once, watch_loop
 from ..watcher import _snapshot_path, _load_snapshot, _render_consolidated_snapshot
-from ..utils import resolve_credentials
 
 
 app = typer.Typer(help="S4 commands: calc, list, watch")
@@ -37,11 +30,9 @@ def table_cmd(
 ) -> None:
     """Fetch SchoolApp and show consolidated table for S4 elements (API4*)."""
     app_ctx: AppContext = ctx.obj
-    resolved_email, resolved_password = resolve_credentials(email, app_ctx.config)
-    if password:
-        resolved_password = password
-    if not resolved_email or not resolved_password:
-        raise typer.BadParameter("Missing credentials: provide --email/--password, env, config, or keyring")
+    resolved_email, resolved_password = resolve_or_raise(
+        email, password, app_ctx.config,
+        message="Missing credentials: provide --email/--password, env, config, or keyring")
 
     code = check_once(
         email=resolved_email,
@@ -79,11 +70,9 @@ def details_cmd(
         raise typer.BadParameter("element is required")
 
     app_ctx: AppContext = ctx.obj
-    resolved_email, resolved_password = resolve_credentials(email, app_ctx.config)
-    if password:
-        resolved_password = password
-    if not resolved_email or not resolved_password:
-        raise typer.BadParameter("Missing credentials: provide --email/--password, env, config, or keyring")
+    resolved_email, resolved_password = resolve_or_raise(
+        email, password, app_ctx.config,
+        message="Missing credentials: provide --email/--password, env, config, or keyring")
 
     details = fetch_element_details(
         email=resolved_email,
@@ -160,16 +149,9 @@ def watch_cmd(
 ) -> None:
     """Watch S4 marks for changes."""
     app_ctx: AppContext = ctx.obj
-    cfg = app_ctx.config.get("schoolapp", {}) if isinstance(app_ctx.config, dict) else {}
-
-    resolved_email, resolved_password = resolve_credentials(email, app_ctx.config)
-
-    # allow CLI-provided password to override
-    if password:
-        resolved_password = password
-
-    if not resolved_email or not resolved_password:
-        raise typer.BadParameter("Missing credentials: provide --email/--password, env vars, config file, or store password in keyring")
+    resolved_email, resolved_password = resolve_or_raise(
+        email, password, app_ctx.config,
+        message="Missing credentials: provide --email/--password, env vars, config file, or store password in keyring")
 
     if once:
         code = check_once(

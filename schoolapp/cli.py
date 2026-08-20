@@ -138,7 +138,11 @@ def doctor(
         resolved_password = password
 
     config_path = app_ctx.config_path
-    now = datetime.now(ZoneInfo("Africa/Casablanca")).strftime("%Y-%m-%d %H:%M:%S %Z")
+    try:
+        now = datetime.now(ZoneInfo("Africa/Casablanca")).strftime("%Y-%m-%d %H:%M:%S %Z")
+    except Exception:
+        # Missing tzdata shouldn't crash the one command meant to diagnose problems.
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S (local, tzdata unavailable)")
     lines = [
         f"checked at:   {now}",
         f"config file:  {config_path} ({'found' if config_path.exists() else 'not found'})",
@@ -401,8 +405,8 @@ def _promo_reconstruct_eval(client, agg_path, agg_params, probe, resolution, rea
     first = client.promo_aggregates(agg_path, {**agg_params, "note": str(real_note or "20")})
     if not first:
         return None
-    effectif = int(float(first.get("Effectif", "0") or 0))
-    if effectif <= 0:
+    effectif = promo_mod._int(first.get("Effectif"))
+    if not effectif or effectif <= 0:
         return None
     steps = promo_mod.reconstruct(
         lambda n: (probe(n) or (1, effectif))[0], resolution=resolution)
@@ -454,7 +458,10 @@ def _emit_promo_artifacts(code, level, per_eval, out_dir, bin_width, plot, your=
                                           subtitle=f"{filiere} {au}".strip(),
                                           mean=mean, your_note=yn_f)
                 log("SUCCESS", f"Wrote {png}")
-            except RuntimeError as exc:
+            except (RuntimeError, ValueError, TypeError) as exc:
+                # RuntimeError from plots (e.g. matplotlib missing); ValueError/TypeError
+                # if the portal's aggregate strings aren't parseable as floats. Plotting
+                # is best-effort — never let it fail the whole promo command.
                 log("WARNING", f"Plot skipped: {exc}")
         summaries.append(summ)
         cached[label] = {"steps": [[n, c] for n, c in steps], "summary": summ, "bins": hist}
@@ -490,7 +497,7 @@ def promo_cmd(
         raise typer.BadParameter("code is required")
     code = code.upper()
     client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
-    target = next((g for g in client.element_grades() if g.code.upper() == code), None)
+    target = next((g for g in client.element_grades() if g.code and g.code.upper() == code), None)
     au = target.au if target else None
     if not au:
         err_console.print(render.error_panel(
@@ -532,7 +539,7 @@ def _resolve_sem_row(rows, label):
         return None
     if not label:
         return rows[-1]
-    return next((r for r in rows if r.semestre.upper() == label.upper()), None)
+    return next((r for r in rows if r.semestre and r.semestre.upper() == label.upper()), None)
 
 
 def _resolve_year_row(rows, label):
@@ -540,7 +547,7 @@ def _resolve_year_row(rows, label):
         return None
     if not label:
         return rows[-1]
-    return next((r for r in rows if r.niveau.upper() == label.upper()), None)
+    return next((r for r in rows if r.niveau and r.niveau.upper() == label.upper()), None)
 
 
 @app.command("promo-sem", rich_help_panel="Live (portal login)")
@@ -566,7 +573,9 @@ def promo_sem_cmd(
         err_console.print(render.error_panel(
             f"Semester {semestre!r} not found.", hint=f"Available: {labels}"))
         raise typer.Exit(code=2)
-    code, filiere = row.semestre.upper(), row.raw.get("Filière", "")
+    # row can come from the "default: latest" fallback (rows[-1]) with no label
+    # check, so semestre isn't guaranteed non-empty the way a matched label is.
+    code, filiere = (row.semestre or "").upper(), row.raw.get("Filière", "")
     agg_params = {"eval": "MoySem", "niveau": row.niveau, "filiere": filiere,
                   "semestre": row.semestre, "au": row.au}
     with err_console.status(f"Reconstructing {code} · MoySem…"):
@@ -607,7 +616,7 @@ def promo_year_cmd(
         err_console.print(render.error_panel(
             f"Year {niveau!r} not found.", hint=f"Available: {labels}"))
         raise typer.Exit(code=2)
-    code = row.niveau.upper()
+    code = (row.niveau or "").upper()  # rows[-1] fallback isn't guaranteed non-empty
     agg_params = {"eval": "MoyAn", "niveau": row.niveau, "filiere": row.filiere, "au": row.au}
     with err_console.status(f"Reconstructing {code} · MoyAn…"):
         res = _promo_reconstruct_eval(
@@ -935,9 +944,9 @@ def show_documents(json_out: bool = JSON_OPT) -> None:
 
 @show_app.command("catalog")
 def show_catalog(
-    niveau: Optional[str] = typer.Option(None, "--niveau"),
-    filiere: Optional[str] = typer.Option(None, "--filiere"),
-    semestre: Optional[str] = typer.Option(None, "--semestre"),
+    niveau: Optional[str] = typer.Option(None, "--niveau", help="Filter to one year, e.g. 2A"),
+    filiere: Optional[str] = typer.Option(None, "--filiere", help="Filter to one filière, e.g. API-MPT"),
+    semestre: Optional[str] = typer.Option(None, "--semestre", help="Filter to one semester, e.g. S3"),
     json_out: bool = JSON_OPT,
 ) -> None:
     """Cached institution catalog modules (filterable)."""

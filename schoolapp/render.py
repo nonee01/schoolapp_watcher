@@ -218,7 +218,10 @@ def _to_casablanca(ts: str) -> str:
     so this is a display-only conversion — the stored/API value stays UTC."""
     try:
         dt = datetime.fromisoformat(ts).astimezone(ZoneInfo("Africa/Casablanca"))
-    except ValueError:
+    except Exception:
+        # ValueError for a malformed ts, or ZoneInfoNotFoundError (a KeyError
+        # subclass) if the system has no tzdata — either way, fall back to
+        # the raw stored value rather than crashing the table render.
         return ts
     return dt.strftime("%Y-%m-%d %H:%M %Z")
 

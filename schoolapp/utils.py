@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import typer
+
 try:
     import tomllib
 except Exception:  # pragma: no cover
@@ -212,4 +214,21 @@ def resolve_credentials(email: str | None = None, config: dict | None = None) ->
         except Exception:
             pass
 
+    return resolved_email, resolved_password
+
+
+def resolve_or_raise(email: str | None, password: str | None, config: dict,
+                      *, message: str) -> tuple[str, str]:
+    """resolve_credentials(), plus the "raise a usage error if incomplete" check
+    every s3/s4 command needs before it can call watcher.check_once/watch_loop.
+
+    Centralizes what used to be a copy-pasted resolve+validate block per command.
+    Raises typer.BadParameter (exit code 2: usage error) rather than returning
+    Nones, so callers can treat the return value as always-populated.
+    """
+    resolved_email, resolved_password = resolve_credentials(email, config)
+    if password:
+        resolved_password = password
+    if not resolved_email or not resolved_password:
+        raise typer.BadParameter(message)
     return resolved_email, resolved_password
