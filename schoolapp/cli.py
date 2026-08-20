@@ -25,7 +25,7 @@ from .presets import PRESET_2A_S3, PRESET_2A_S4
 from .render import console, err_console
 from .semesters.s3 import app as s3_app
 from .semesters.s4 import app as s4_app
-from .utils import AppContext, banner, load_config, load_env_file, log
+from .utils import AppContext, banner, load_config, load_env_file, log, resolve_config_path
 from .utils import resolve_credentials
 from .utils import set_log_level, set_quiet
 from .watcher import _append_history, _history_path, run_health_check
@@ -108,7 +108,7 @@ def main(
 
     load_env_file(env_file)
     cfg = load_config(config)
-    ctx.obj = AppContext(debug=debug, config=cfg)
+    ctx.obj = AppContext(debug=debug, config=cfg, config_path=resolve_config_path(config))
     if debug:
         set_log_level("DEBUG")
         log("INFO", "Debug mode enabled")
@@ -130,18 +130,29 @@ def doctor(
     password: str | None = typer.Option(None, help="SchoolApp password (overrides config/env)"),
 ) -> None:
     """Print effective runtime config and optional health checks."""
+    from zoneinfo import ZoneInfo
+
     app_ctx: AppContext = ctx.obj
-    panel = Panel.fit(str(app_ctx.config), title="Effective config")
-    from .utils import console
-
-    console.print(panel)
-
-    if not check:
-        return
-
     resolved_email, resolved_password = resolve_credentials(email, app_ctx.config)
     if password:
         resolved_password = password
+
+    config_path = app_ctx.config_path
+    now = datetime.now(ZoneInfo("Africa/Casablanca")).strftime("%Y-%m-%d %H:%M:%S %Z")
+    lines = [
+        f"checked at:   {now}",
+        f"config file:  {config_path} ({'found' if config_path.exists() else 'not found'})",
+        f"config keys:  {sorted(app_ctx.config.keys()) or '--'}",
+        f"state store:  {store.state_dir()}",
+        f"email:        {resolved_email or '-- not set --'}",
+        f"password:     {'set' if resolved_password else '-- not set --'}",
+    ]
+    from .utils import console
+
+    console.print(Panel.fit("\n".join(lines), title="Effective config"))
+
+    if not check:
+        return
 
     if not resolved_email or not resolved_password:
         table = Table(title="Doctor checks", header_style="bold magenta")

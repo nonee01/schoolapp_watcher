@@ -8,7 +8,9 @@ so they work identically for the CLI and any other store reader.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Iterable, Sequence
+from zoneinfo import ZoneInfo
 
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -209,8 +211,20 @@ def dashboard_view(profile: dict | None, semesters: list[dict],
     return Group(*parts)
 
 
+def _to_casablanca(ts: str) -> str:
+    """Render a stored UTC `fetched_at` in Africa/Casablanca for display.
+
+    The store always writes an explicit UTC offset (see store.save_resource),
+    so this is a display-only conversion — the stored/API value stays UTC."""
+    try:
+        dt = datetime.fromisoformat(ts).astimezone(ZoneInfo("Africa/Casablanca"))
+    except ValueError:
+        return ts
+    return dt.strftime("%Y-%m-%d %H:%M %Z")
+
+
 def freshness_table(store_dir: str, freshness: dict[str, str | None]) -> Table:
-    table = data_table(f"State store: {store_dir}", ["Resource", "Fetched at (UTC)"], [])
+    table = data_table(f"State store: {store_dir}", ["Resource", "Fetched at (Africa/Casablanca)"], [])
     for name, ts in freshness.items():
-        table.add_row(name, ts or Text("— not cached", style="muted"))
+        table.add_row(name, _to_casablanca(ts) if ts else Text("— not cached", style="muted"))
     return table

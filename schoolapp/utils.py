@@ -52,6 +52,7 @@ def get_log_level() -> int:
 class AppContext:
     debug: bool
     config: dict[str, Any]
+    config_path: Path
 
 
 def banner() -> None:
@@ -177,10 +178,13 @@ def _read_toml(path: Path) -> dict[str, Any]:
     return {}
 
 
-def load_config(config_path: str | None) -> dict[str, Any]:
+def resolve_config_path(config_path: str | None) -> Path:
     default_path = Path.home() / ".schoolapp" / "config.toml"
-    path = Path(config_path).expanduser() if config_path else default_path
-    return _read_toml(path)
+    return Path(config_path).expanduser() if config_path else default_path
+
+
+def load_config(config_path: str | None) -> dict[str, Any]:
+    return _read_toml(resolve_config_path(config_path))
 
 
 def dump_json(data: dict[str, Any]) -> str:
