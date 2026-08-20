@@ -12,6 +12,8 @@ from pathlib import Path
 
 
 def state_dir() -> Path:
+    """Root of the on-disk store: $XDG_STATE_HOME/schoolapp, defaulting to
+    ~/.local/state/schoolapp when XDG_STATE_HOME is unset."""
     base = os.environ.get("XDG_STATE_HOME", "").strip() or (Path.home() / ".local" / "state")
     return Path(base) / "schoolapp"
 
@@ -27,6 +29,7 @@ def _jsonable(value):
 
 
 def resource_path(name: str, directory: Path | None = None) -> Path:
+    """Envelope path for a resource name ("student/profile" -> .../student/profile.json)."""
     return (directory or state_dir()) / f"{name}.json"
 
 
@@ -56,10 +59,12 @@ def load_resource(name: str, directory: Path | None = None) -> dict | None:
 
 
 def documents_dir(directory: Path | None = None) -> Path:
+    """Directory that cached document PDFs are stored under."""
     return (directory or state_dir()) / "documents"
 
 
 def document_path(filename: str, directory: Path | None = None) -> Path:
+    """Path a cached document's PDF would live at (existence not checked)."""
     return documents_dir(directory) / filename
 
 

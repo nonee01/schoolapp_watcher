@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import subprocess
@@ -8,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_file
+from werkzeug.exceptions import HTTPException
 
 from . import store
 from .presets import modules_for_semester
@@ -32,13 +34,18 @@ _POLL_INTERVAL = int(os.environ.get("WATCHER_INTERVAL", "120"))
 
 
 def _auth():
+    """Check X-API-Key against API_KEY when set; unauthenticated if API_KEY is
+    unset (cli.py warns about this at startup). Returns a (response, status)
+    error tuple to short-circuit the route, or None if the request may proceed."""
     key = os.environ.get("API_KEY", "")
-    if key and request.headers.get("X-API-Key") != key:
+    if key and not hmac.compare_digest(request.headers.get("X-API-Key", ""), key):
         return jsonify({"error": "Invalid API key"}), 401
     return None
 
 
 def _cell(row: list[str], idx: dict[str, int], key: str) -> str:
+    """Look up one column of a snapshot row by header name; "--" if the column
+    is absent, out of range, or blank (the store's convention for "no data")."""
     i = idx.get(key)
     if i is None or i >= len(row):
         return "--"
@@ -47,7 +54,13 @@ def _cell(row: list[str], idx: dict[str, int], key: str) -> str:
 
 
 def _systemctl(*args: str) -> str:
-    out = subprocess.run(["systemctl", "--user", *args], capture_output=True, text=True, timeout=15)
+    """Run `systemctl --user <args>` and return its stdout, stripped. Returns ""
+    on any failure (binary missing, timeout, non-systemd host) so callers degrade
+    to "unknown"/"inactive" instead of the watcher-status endpoints crashing."""
+    try:
+        out = subprocess.run(["systemctl", "--user", *args], capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return ""
     return out.stdout.strip()
 
 
@@ -56,8 +69,30 @@ def _active_interval() -> int:
     return SLOW_INTERVAL if SLOW_WINDOW[0] <= hour < SLOW_WINDOW[1] else _POLL_INTERVAL
 
 
+@app.errorhandler(HTTPException)
+def _http_error(exc: HTTPException):
+    """Routing errors (404 on an unknown path, 405 on a wrong method, etc.) as
+    JSON instead of Flask's default HTML error page — this is an API, every
+    client response should be parseable JSON."""
+    return jsonify({"error": exc.description or exc.name}), exc.code
+
+
+@app.errorhandler(Exception)
+def _unhandled_error(exc: Exception):
+    """Last-resort net: any exception that escapes a route (a crash-prone
+    parse, a malformed store envelope, etc.) becomes a clean JSON 500 instead
+    of a raw traceback reaching an HTTP client."""
+    app.logger.exception("Unhandled error in %s", request.path)
+    return jsonify({"error": "Internal server error"}), 500
+
+
 @app.get("/api/status")
 def status():
+    """Watcher liveness + per-resource cache freshness. Reads systemctl state
+    and snapshot/resource mtimes only; no network call.
+    Frozen shape (see CLAUDE.md / schoolapp-api-compatibility skill): top-level
+    keys watcher, last_check, next_check, poll_interval, server_time must not
+    change. `resources` was added additively (spec §8.1)."""
     err = _auth()
     if err:
         return err
@@ -83,6 +118,11 @@ def status():
 
 @app.get("/api/grades/<semester>")
 def grades(semester: str):
+    """Element/module grades for a semester, joined against the frozen
+    curriculum preset (presets.py) so every element shows even if the portal
+    snapshot is missing rows. Reads the cached snapshot only; no network call.
+    Frozen shape (CLAUDE.md): {semester, modules[]} with each module/element
+    key set fixed — do not add/remove/rename keys, see CLAUDE.md."""
     err = _auth()
     if err:
         return err
@@ -139,6 +179,9 @@ def grades(semester: str):
 
 
 def _extras(sem: str = "S4") -> dict:
+    """The legacy snapshot's non-tabular sidecar data (absences/modules/
+    semesters/sanctions keyed by id) — {} if there's no snapshot yet or it
+    doesn't carry an `extras` dict."""
     snap = _load_snapshot(_snapshot_path(sem, None))
     if snap is None or not isinstance(snap.extras, dict):
         return {}
@@ -147,6 +190,8 @@ def _extras(sem: str = "S4") -> dict:
 
 @app.get("/api/absences")
 def absences():
+    """Absence records + sanctions from the cached snapshot; no network call.
+    Frozen shape (CLAUDE.md): {absences[], sanctions{}} — see CLAUDE.md."""
     err = _auth()
     if err:
         return err
@@ -168,6 +213,9 @@ def absences():
 
 @app.get("/api/modules")
 def official_modules():
+    """The portal's own official module results (as opposed to /api/grades'
+    curriculum-joined view). Reads the cached snapshot only; no network call.
+    Frozen shape (CLAUDE.md): {modules[]} — see CLAUDE.md."""
     err = _auth()
     if err:
         return err
@@ -188,6 +236,8 @@ def official_modules():
 
 @app.get("/api/semesters")
 def semesters():
+    """Per-semester summary results from the cached snapshot; no network call.
+    Frozen shape (CLAUDE.md): {semesters[]} — see CLAUDE.md."""
     err = _auth()
     if err:
         return err
@@ -199,6 +249,10 @@ def semesters():
 
 @app.get("/api/history")
 def history():
+    """Newest-first watcher check history, one entry per line of the legacy
+    history file (`?limit=`, default 100, clamped to [1, 1000]). Reads the
+    cached file only; no network call. Frozen shape (CLAUDE.md): {history[]}
+    — see CLAUDE.md."""
     err = _auth()
     if err:
         return err
@@ -222,6 +276,10 @@ def history():
 
 @app.post("/api/check")
 def force_check():
+    """Trigger one synchronous watcher check against the live portal (network
+    call — logs in, scrapes, may send email/Telegram notifications on change).
+    Rejects a concurrent check with 409 rather than racing two logins. Not a
+    frozen endpoint, but action-shaped: {changed, checked_at}."""
     err = _auth()
     if err:
         return err
@@ -252,6 +310,9 @@ def force_check():
 
 @app.post("/api/watcher/pause")
 def pause_watcher():
+    """Stop the watcher systemd unit (`systemctl --user stop`), local to this
+    host — no portal network call. Degrades to {"watcher": "inactive"} if
+    systemctl itself is unavailable."""
     err = _auth()
     if err:
         return err
@@ -261,6 +322,9 @@ def pause_watcher():
 
 @app.post("/api/watcher/resume")
 def resume_watcher():
+    """Start the watcher systemd unit (`systemctl --user start`), local to
+    this host — no portal network call. Degrades to {"watcher": "unknown"} if
+    systemctl itself is unavailable."""
     err = _auth()
     if err:
         return err
@@ -271,7 +335,10 @@ def resume_watcher():
 # ── library-store endpoints (spec §8.1) — all additive, all cache-served ──────
 
 def _from_store(name: str, key: str, wrap=lambda d: d):
-    """Standard read: 401 via _auth, 404 when the envelope isn't cached yet."""
+    """Standard read-through: 401 via _auth, 404 when the envelope isn't
+    cached yet, otherwise {key: wrap(data), fetched_at}. Never hits the
+    network — these endpoints only ever serve what fetch_all/the watcher
+    already wrote to the store."""
     err = _auth()
     if err:
         return err
@@ -283,21 +350,26 @@ def _from_store(name: str, key: str, wrap=lambda d: d):
 
 @app.get("/api/profile")
 def profile():
+    """Cached student profile (name, filiere, niveau, ...). See _from_store."""
     return _from_store("student/profile", "profile")
 
 
 @app.get("/api/years")
 def years():
+    """Cached year-level results. See _from_store."""
     return _from_store("student/years", "years")
 
 
 @app.get("/api/courses")
 def courses():
+    """Cached course enrollments. See _from_store."""
     return _from_store("student/courses", "courses")
 
 
 @app.get("/api/all")
 def all_data():
+    """The full cached StudentData bundle as one envelope (all resources in a
+    single response) — no network call."""
     err = _auth()
     if err:
         return err
@@ -308,6 +380,9 @@ def all_data():
 
 
 def _latest_au_only(items: list[dict]) -> list[dict]:
+    """Filter a list of {..., "au": ...} dicts down to the most recent
+    académie-universitaire, string-sorted (AU codes like "2025-2026" sort
+    correctly this way). Returns `items` unchanged if none carry an `au`."""
     aus = [g.get("au", "") for g in items if g.get("au")]
     if not aus:
         return items
@@ -321,18 +396,25 @@ def _want_history() -> bool:
 
 @app.get("/api/grades/elements")
 def grade_elements():
+    """Cached element grades — current AU only by default, `?history=1` for
+    every AU on record. See _from_store."""
     wrap = (lambda d: d) if _want_history() else _latest_au_only
     return _from_store("student/elements", "elements", wrap)
 
 
 @app.get("/api/grades/modules")
 def grade_modules():
+    """Cached module grades — current AU only by default, `?history=1` for
+    every AU on record. See _from_store."""
     wrap = (lambda d: d) if _want_history() else _latest_au_only
     return _from_store("student/modules", "modules", wrap)
 
 
 @app.get("/api/stats/<code>")
 def element_stats(code: str):
+    """Promo-wide mark statistics cached for one element code (case-
+    insensitive) — no network call; 404 if `schoolapp fetch-all --stats`
+    hasn't cached anything for this code yet."""
     err = _auth()
     if err:
         return err
@@ -346,6 +428,8 @@ def element_stats(code: str):
 
 @app.get("/api/documents")
 def documents():
+    """Cached document listing (transcripts/relevés), each annotated with
+    whether its PDF bytes are already downloaded locally. See _from_store."""
     def with_cached(docs: list[dict]) -> list[dict]:
         return [{**d, "cached": store.document_path(d.get("filename", "")).exists()} for d in docs]
     return _from_store("student/documents", "documents", with_cached)
@@ -353,6 +437,10 @@ def documents():
 
 @app.get("/api/documents/<name>")
 def document_file(name: str):
+    """Serve one previously-downloaded document's PDF bytes from local disk;
+    no network call (documents are fetched separately via `schoolapp export
+    --with-documents`, never inline on a GET). Rejects `name` containing "/"
+    or ".." to keep the lookup inside the documents directory."""
     err = _auth()
     if err:
         return err
@@ -366,6 +454,10 @@ def document_file(name: str):
 
 @app.get("/api/export")
 def export():
+    """The full cached bundle, either as JSON (`?format=json`, default — same
+    body as /api/all) or as a zip of the whole state directory
+    (`?format=zip`: student/, catalog/, documents/, minus .tmp files). No
+    network call, no scraping — packages what's already on disk."""
     err = _auth()
     if err:
         return err
@@ -396,6 +488,9 @@ def export():
 
 @app.get("/api/catalog")
 def catalog():
+    """Institution-wide module catalog crawled via `schoolapp catalog crawl`,
+    optionally filtered by `?niveau=&filiere=&semestre=` (case-insensitive
+    exact match, AND'd together). No network call — reads the cache."""
     def filtered(mods: list[dict]) -> list[dict]:
         out = mods
         for field in ("niveau", "filiere", "semestre"):
@@ -408,6 +503,7 @@ def catalog():
 
 @app.get("/api/filieres")
 def filieres():
+    """Cached list of filières from the catalog crawl. See _from_store."""
     return _from_store("catalog/filieres", "filieres")
 
 

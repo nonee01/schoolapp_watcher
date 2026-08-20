@@ -106,6 +106,9 @@ class SchoolAppClient:
         self._last_request = time.monotonic()
 
     def login(self, email: str, password: str) -> None:
+        """Log in now (network call: GET the login page for a CSRF token, POST
+        credentials). Raises RuntimeError on a changed login page or rejected
+        credentials."""
         self._email, self._password = email, password
         self._do_login()
 
@@ -159,33 +162,48 @@ class SchoolAppClient:
     # ── per-student resources (spec §5) ──────────────────────────────────
 
     def profile(self) -> StudentProfile:
+        """GET and parse the student's profile from the portal index (network call)."""
         return parse_profile(self._get(INDEX_PATH))
 
     def element_grades(self, history: bool = False) -> list[ElementGrade]:
+        """GET and parse element-level grades (network call): the current AU by
+        default, every AU on record when `history=True`."""
         return parse_element_grades(self._get(ELEMENTS_HISTORY_PATH if history else ELEMENTS_PATH))
 
     def module_grades(self, history: bool = False) -> list[ModuleGrade]:
+        """GET and parse module-level grades (network call): the current AU by
+        default, every AU on record when `history=True`."""
         return parse_module_grades(self._get(MODULES_HISTORY_PATH if history else MODULES_PATH))
 
     def semester_results(self) -> list[SemesterResult]:
+        """GET and parse per-semester results (network call)."""
         return parse_semester_results(self._get(SEMESTERS_PATH))
 
     def year_results(self) -> list[YearResult]:
+        """GET and parse per-year (année universitaire) results (network call)."""
         return parse_year_results(self._get(YEARS_PATH))
 
     def diploma(self) -> DiplomaResult:
+        """GET and parse the diploma-results page (network call); empty=True
+        when the student hasn't graduated yet."""
         return parse_diploma(self._get(DIPLOMA_PATH))
 
     def absences(self) -> list[Absence]:
+        """GET and parse the per-absence record list (network call)."""
         return parse_absences(self._get(ABSENCES_PATH))
 
     def absence_summary(self) -> list[dict[str, str]]:
+        """GET the same absences page as absences() and parse its summary
+        table instead (network call — separate request, not cached between
+        the two calls)."""
         return parse_absence_summary(self._get(ABSENCES_PATH))
 
     def sanctions(self) -> list[Sanction]:
+        """GET and parse disciplinary sanctions, if any (network call)."""
         return parse_sanctions(self._get(SANCTIONS_PATH))
 
     def courses(self) -> list[CourseEnrollment]:
+        """GET and parse the student's course enrollments (network call)."""
         return parse_courses(self._get(COURSES_PATH))
 
     _EVAL_ALIASES = {
@@ -242,6 +260,11 @@ class SchoolAppClient:
         return self._stat_probe(path, params)
 
     def mark_statistics(self, code: str, eval_kind: str = "all") -> list[MarkStatistics]:
+        """Promo-wide statistics for one element's own recorded marks (network
+        calls: one GET for the element's current grades, then one popup GET
+        per eval kind — CC/EX/TP/RAT/Moy, or just `eval_kind` if given).
+        Skips any eval the student has no mark for yet. [] if the element
+        code isn't found in the current grades at all."""
         grades = parse_element_grades(self._get(ELEMENTS_PATH))
         target = next((g for g in grades if g.code.upper() == code.upper()), None)
         if target is None:
@@ -264,6 +287,10 @@ class SchoolAppClient:
 
     def documents(self, year_results: list[YearResult] | None = None,
                   semester_results: list[SemesterResult] | None = None) -> list[Document]:
+        """Enumerate downloadable transcript/relevé documents from year and
+        semester results. Fetches whichever of `year_results`/`semester_results`
+        isn't passed in (network calls only for the missing one); pass both to
+        avoid any request when the caller already has them (as fetch_all does)."""
         yr = year_results if year_results is not None else self.year_results()
         sr = semester_results if semester_results is not None else self.semester_results()
         return build_documents(yr, sr)
@@ -284,17 +311,25 @@ class SchoolAppClient:
     # ── institution-wide catalog (spec §11) ─────────────────────────────
 
     def catalog_options(self) -> dict:
+        """GET the catalog filter form and parse its dropdown options plus a
+        fresh CSRF token (network call) — feeds catalog_modules()."""
         return parse_catalog_options(self._get(CATALOG_PATH))
 
     def catalog_modules(self, niveau: str, filiere: str, semestre: str,
                         csrf: str | None = None) -> list[CatalogModule]:
+        """POST the catalog filter form (niveau/filiere/semestre) and parse the
+        resulting module table. Fetches a fresh CSRF token via catalog_options()
+        first unless one is supplied (network calls: one or two GET/POST)."""
         if csrf is None:
-            csrf = self.catalog_options()["csrf"]
+            csrf = self.catalog_options().get("csrf")
+            if not csrf:
+                raise RuntimeError("Catalog page changed: CSRF token missing")
         html = self._post(CATALOG_PATH, {"niveau": niveau, "filiere": filiere,
                                          "semestre": semestre, "_csrf": csrf})
         return parse_catalog_modules(html, filiere=filiere)
 
     def filieres(self) -> list[Filiere]:
+        """GET and parse the list of filières (network call)."""
         return parse_filieres(self._get(FILIERES_PATH))
 
     # ── aggregate ────────────────────────────────────────────────────────
