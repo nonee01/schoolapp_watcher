@@ -76,6 +76,9 @@ def details_cmd(
     from rich.table import Table
     from rich.panel import Panel
 
+    if not element:
+        raise typer.BadParameter("element is required")
+
     app_ctx: AppContext = ctx.obj
     resolved_email, resolved_password = resolve_credentials(email, app_ctx.config)
     if password:

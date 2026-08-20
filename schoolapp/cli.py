@@ -354,6 +354,8 @@ def csv_cmd(
         help="For elements/grades: only the latest académique year"),
 ) -> None:
     """Export marks (or the NoteRAT/exam ranking stats) as CSV for spreadsheets."""
+    if not resource:
+        raise typer.BadParameter("resource is required")
     name = _CSV_RESOURCES.get(resource.strip().lower())
     if name is None:
         err_console.print(render.error_panel(
@@ -473,6 +475,8 @@ def promo_cmd(
     from . import promo as promo_mod
     from .client import STATS_PATH
 
+    if not code:
+        raise typer.BadParameter("code is required")
     code = code.upper()
     client = _library_client(ctx, email, password, timeout, min_interval=min_interval)
     target = next((g for g in client.element_grades() if g.code.upper() == code), None)
@@ -617,6 +621,8 @@ def explain(
     """Règlement walkthrough for one element: how SO/SR/decision are computed."""
     from .academics import explain_element
 
+    if not code:
+        raise typer.BadParameter("code is required")
     env = store.load_resource("student/elements")
     items = (env or {}).get("data") or []
     exp = explain_element(code, items)
@@ -743,6 +749,8 @@ def catalog_show(
     """Show cached catalog modules (with element weights) for one combo."""
     from .utils import console
 
+    if not niveau or not filiere or not semestre:
+        raise typer.BadParameter("niveau, filiere, and semestre are all required")
     defs = module_defs(niveau, filiere, semestre)
     if not defs:
         console.print("[yellow]No cached modules for this combo — run `schoolapp catalog crawl` first.[/yellow]")
