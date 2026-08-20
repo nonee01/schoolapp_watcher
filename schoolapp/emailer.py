@@ -7,6 +7,12 @@ from email.message import EmailMessage
 
 
 def send_email(subject: str, body: str, *, config: dict | None = None, html: str | None = None) -> None:
+    """Send a real email over SMTP using config['smtp'] or SMTP_* env vars as fallback.
+
+    Raises RuntimeError if the SMTP settings are incomplete. Raises smtplib
+    exceptions (e.g. SMTPAuthenticationError, socket errors) on send failure;
+    callers in the watcher loop must not let those crash the process.
+    """
     cfg = config or {}
     smtp_cfg = cfg.get("smtp", {}) if isinstance(cfg, dict) else {}
 

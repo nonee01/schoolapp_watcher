@@ -58,7 +58,11 @@ def _marks_state(headers: list[str], rows: list[list[str]], semester: str) -> di
     idx = {h: i for i, h in enumerate(headers)}
     try:
         prefixes = {m.code.upper() for m in modules_for_semester(semester)}
-    except Exception:
+    except Exception as exc:
+        # Unknown/misconfigured semester preset: fall back to comparing every row
+        # unfiltered instead of crashing the diff, but log so a real preset bug
+        # (as opposed to an unrecognized semester) doesn't go unnoticed.
+        log("WARNING", f"Could not load module prefixes for {semester}: {exc}")
         prefixes = set()
 
     ci = idx["CodeElem"]
@@ -575,8 +579,10 @@ def _all_titles() -> tuple[dict[str, str], dict[str, str]]:
                 modules[m.code.upper()] = m.title
                 for e in m.elements:
                     elements[e.code.upper()] = e.title
-        except Exception:
-            pass
+        except Exception as exc:
+            # A broken preset for one semester must not blank out titles for the
+            # other; log it so the underlying preset bug is still visible.
+            log("WARNING", f"Could not load titles for {sem}: {exc}")
     return elements, modules
 
 
@@ -716,7 +722,10 @@ def _build_diff_email(semester: str, old: Snapshot | None, new_snap: Snapshot) -
             for el in mod.elements:
                 element_titles[el.code.upper()] = el.title
                 element_defs[el.code.upper()] = el
-    except Exception:
+    except Exception as exc:
+        # Missing/broken preset must not block the email body; fall back to bare
+        # codes instead of titles and log so the preset bug is still visible.
+        log("WARNING", f"Could not load element titles for {semester}: {exc}")
         element_titles = {}
         element_defs = {}
 
@@ -759,7 +768,8 @@ def _build_diff_email(semester: str, old: Snapshot | None, new_snap: Snapshot) -
     # Build element → module mapping
     try:
         all_modules = modules_for_semester(semester)
-    except Exception:
+    except Exception as exc:
+        log("WARNING", f"Could not load modules for {semester}: {exc}")
         all_modules = []
     elem_to_mod: dict[str, object] = {}
     for mod in all_modules:
@@ -843,7 +853,8 @@ def _tg_grade_section(semester: str, old: Snapshot | None, new_snap: Snapshot) -
             for el in mod.elements:
                 element_titles[el.code.upper()] = el.title
                 element_defs[el.code.upper()] = el
-    except Exception:
+    except Exception as exc:
+        log("WARNING", f"Could not load element titles for {semester}: {exc}")
         element_titles = {}
         element_defs = {}
 
@@ -873,7 +884,8 @@ def _tg_grade_section(semester: str, old: Snapshot | None, new_snap: Snapshot) -
 
     try:
         all_mods = modules_for_semester(semester)
-    except Exception:
+    except Exception as exc:
+        log("WARNING", f"Could not load modules for {semester}: {exc}")
         all_mods = []
 
     elem_to_mod = {el.code.upper(): mod for mod in all_mods for el in mod.elements}
@@ -1108,6 +1120,17 @@ def _generic_resource_diffs(data) -> list[tuple[str, str, list[str]]]:
 
 
 def check_once(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, notify_email: bool, config: dict | None, notify_telegram: bool = False, session: requests.Session | None = None) -> int:
+    """Run a single fetch-diff-notify cycle for one semester.
+
+    Side effects: logs in and fetches the marks page plus every other student
+    resource from the live SchoolApp portal; overwrites the semester snapshot
+    file (`_snapshot_path`) and the per-resource store (`store.save_student_data`);
+    appends one line per detected change to changes.jsonl; and, when
+    notify_email/notify_telegram are set, sends an email and/or Telegram
+    message summarizing what changed. Network/HTTP errors from the fetch are
+    not caught here and propagate to the caller (watch_loop retries them).
+    Returns 1 if anything changed since the last snapshot, 0 otherwise.
+    """
     if session is None:
         session = requests.Session()
         session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
@@ -1210,13 +1233,20 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
                 subject += f" (+{len(subjects) - 1})"
             heading = "Nouvelles notes disponibles" if grades_changed else "Mises à jour SchoolApp"
             html = _html_wrap(semester, "\n".join(sections), heading=heading)
-            send_email(
-                subject=subject,
-                body=f"SchoolApp {semester} update. Open in an HTML email viewer to see details.",
-                html=html,
-                config=config,
-            )
-            log("SUCCESS", "Email notification sent")
+            try:
+                send_email(
+                    subject=subject,
+                    body=f"SchoolApp {semester} update. Open in an HTML email viewer to see details.",
+                    html=html,
+                    config=config,
+                )
+                log("SUCCESS", "Email notification sent")
+            except Exception as exc:
+                # A broken SMTP config/connection must not surface as a failed check
+                # (the snapshot/store above are already saved) and must not skip the
+                # Telegram send or changes.jsonl append below — mirrors the Telegram
+                # try/except a few lines down.
+                log("WARNING", f"Email notification failed: {exc}")
 
         if notify_telegram:
             tg_parts: list[str] = []
@@ -1286,7 +1316,15 @@ def check_once(*, email: str, password: str, timeout: int, semester: str, state_
 
 
 def run_health_check(*, email: str, password: str, timeout: int) -> dict[str, str | int | bool]:
-    """Run a non-destructive connectivity/auth check against SchoolApp."""
+    """Run a non-destructive connectivity/auth check against SchoolApp.
+
+    Side effects: performs a real login + marks-page fetch against the live
+    portal (no snapshot/store writes, no notifications). Raises
+    `requests.HTTPError` if the login or marks-page request comes back with a
+    non-2xx status; other network errors (timeouts, DNS, connection refused)
+    raise `requests.RequestException`. On success returns a dict describing
+    what happened instead of raising.
+    """
     session = requests.Session()
     session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
 
@@ -1392,6 +1430,17 @@ def _try_notify(config: dict | None, enabled: bool, subject: str, text: str, not
 
 
 def watch_loop(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, interval: int, notify_email: bool, config: dict | None, notify_telegram: bool = False) -> int:
+    """Run `check_once` on a repeating interval until interrupted.
+
+    This is the long-running background process. It shares one `requests.Session`
+    (cookies/login) across iterations, and never lets a single bad response kill
+    the loop: `requests.RequestException` and any other exception from
+    `check_once` are both caught and logged, with exponential backoff (capped at
+    30 minutes) while failures persist. After `ALERT_AFTER_SECONDS` of continuous
+    failures it sends a one-time "watcher is failing" notification, and a
+    "recovered" notification once a check succeeds again. Runs forever; the
+    only normal exit is a KeyboardInterrupt (SIGINT), which returns 0.
+    """
     log("INFO", f"Watching {semester}: every {interval}s (every {SLOW_INTERVAL // 60} min between {SLOW_WINDOW[0]:02d}:00-{SLOW_WINDOW[1]:02d}:00)")
     session = requests.Session()
     session.headers.update({"User-Agent": "schoolapp-cli/0.2"})

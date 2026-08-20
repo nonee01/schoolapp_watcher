@@ -8,6 +8,15 @@ TELEGRAM_API_BASE = "https://api.telegram.org"
 
 
 def send_telegram(message: str, *, config: dict | None = None) -> None:
+    """Send a real message via the Telegram Bot API using config['telegram']
+    or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID env vars as fallback.
+
+    `message` is sent with parse_mode="HTML". Raises RuntimeError if the
+    token/chat_id are missing or the API reports ok=false; raises
+    requests exceptions (timeout, connection error, non-2xx status) on
+    transport failure. Callers in the watcher loop must not let those crash
+    the process.
+    """
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
     if config:
