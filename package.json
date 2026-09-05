@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@pspdfkit/pdf-to-markdown": "^0.4.0",
+    "ccusage": "^20.0.14"
+  }
+}

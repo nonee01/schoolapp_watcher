@@ -1,0 +1,273 @@
+.TH SCHOOLAPP 1 "2026-08-20" "schoolapp-watcher" "User Commands"
+.SH NAME
+schoolapp \- semester-first CLI for ENSAM SchoolApp: fetch, cache, watch, and serve your own results
+.SH SYNOPSIS
+.B schoolapp
+.RI [ global-options ]
+.RI [ command
+.RI [ args ...]]
+.SH DESCRIPTION
+.B schoolapp
+is one front-end over a shared library, a local state store, and a read-through
+API. It never talks to the portal on your behalf without you asking: commands
+are split into three kinds, and the split is the whole design.
+.PP
+.B Live
+commands log into the SchoolApp portal with your credentials, fetch fresh
+data, and persist it to the local store
+.RI ( ~/.local/state/schoolapp
+by default).
+.B Read
+commands never touch the network: they only display whatever the last
+.B Live
+fetch already cached, which is what makes them safe to run often, offline, or
+from a script.
+.B serve
+exposes that same store over HTTP, read-through, for the plasmoid and Android
+front-ends to poll instead of hitting the portal themselves.
+.PP
+.B s3
+and
+.B s4
+are per-semester namespaces with their own
+.BR list ", " table ", " details ", " calc ", and " watch
+subcommands, since a student is usually working one semester at a time.
+.SH GLOBAL OPTIONS
+.TP
+.B --version
+Print the version and exit.
+.TP
+.B --debug
+Enable debug logging.
+.TP
+.BR --quiet ", " --no-banner " (" -q )
+Silence the startup banner and log chrome; only real output remains on
+stdout.
+.TP
+.BI --config " PATH"
+Path to a config TOML file. Default:
+.IR ~/.schoolapp/config.toml .
+.TP
+.BI --env-file " PATH"
+Load
+.I KEY=VALUE
+env vars from
+.IR PATH .
+If not given, the CLI looks for
+.I .env
+then
+.I .env.example
+in the current directory or project root; if only
+.I .env.example
+exists it is copied to
+.I .env
+(mode 600 where possible) so you have something to edit.
+.SH LIVE COMMANDS (portal login)
+.TP
+.B doctor
+Print effective runtime config and run optional health checks. Start here
+when something looks wrong.
+.TP
+.B profile
+Fetch the student profile
+.RI ( /index ),
+cache it, and display it.
+.TP
+.BI fetch-all " [--no-save]"
+Fetch every per-student resource in one pass; persists to the store unless
+.BR --no-save .
+This is what most automation (a login-time watcher, a cron job) should call.
+.TP
+.BI export " [--pdf]"
+Fetch everything and write a JSON archive, optionally bundling the document
+PDFs.
+.TP
+.BI promo " CODE"
+Reconstruct the whole promotion's grades for one element, anonymized.
+.TP
+.BI promo-sem " ..."
+Reconstruct the whole promotion's semester moyennes, anonymized.
+.TP
+.BI promo-year " ..."
+Reconstruct the whole promotion's année moyennes, anonymized.
+.TP
+.B documents list
+List document descriptors from the store and whether each PDF is already
+cached.
+.TP
+.B documents download
+Download attestation / relevé PDFs, caching them into the store.
+.SH READ COMMANDS (offline, from the store)
+These never touch the network; they mirror exactly what
+.B serve
+would answer.
+.TP
+.B status
+Per-resource freshness: what the API would serve right now, and how old it
+is.
+.TP
+.B dashboard
+The default when no command is given: who you are, latest results, store
+freshness, recent changes.
+.TP
+.B changes
+Change history: the same feed the email digests narrate.
+.TP
+.BI csv " RESOURCE " "[-o FILE] [--latest]"
+Export marks, or NoteRAT/exam ranking stats, as CSV.
+.I RESOURCE
+is one of
+.IR elements ", " grades ", " modules ", " semesters ", " years ", " courses ", " absences .
+Writes to stdout unless
+.B -o
+is given;
+.B --latest
+restricts elements/grades to the latest académique year.
+.TP
+.BI explain " CODE " "[--json]"
+Règlement walkthrough for one element: how SO/SR/decision are computed, with
+the articles cited. See
+.B RÈGLEMENT
+below.
+.TP
+.B show
+Display cached data from the store. Subcommands:
+.IR all ", " profile ", " grades " (add " --modules " for module-level), " semesters ", " years ", " courses ", " absences .
+.SH SERVER
+.TP
+.BI serve " [--host ADDR] [--port N] [--threads N] [--reload]"
+Serve the read-through API over the same store the watcher writes. Reads
+credentials/API key from whatever
+.B --env-file
+or
+.B --config
+already loaded, so
+.B "schoolapp --env-file .env serve"
+is the one-liner the plasmoid/Android app point at. Default bind
+.IR 0.0.0.0:8787 ,
+waitress with 4 threads;
+.B --reload
+swaps in Flask's dev server for autoreload during development.
+.SH SEMESTERS
+.B s3
+and
+.B s4
+each provide:
+.TP
+.B list
+List modules and elements for that semester.
+.TP
+.B table
+Fetch and show a consolidated grade table (API3*/API4* elements).
+.TP
+.BI details " ELEMENT"
+Detailed grade breakdown for one element.
+.TP
+.B calc
+Run the interactive weighted calculator for that semester.
+.TP
+.B watch
+Watch that semester's marks for changes, diffing snapshots.
+.SH CATALOG
+.TP
+.B catalog crawl
+Crawl the institution-wide (niveau × filière × semestre) curriculum catalog
+into the store. Incremental, re-running merges rather than replaces.
+.TP
+.B catalog show
+Show cached catalog modules, with element weights, for one
+niveau/filière/semestre combination.
+.SH RÈGLEMENT
+.B explain
+and the
+.B s3 " / " s4 " " table
+views apply the official ENSAM evaluation règlement (CE 2019-10-22 /
+CU 2019-12-25): after a rattrapage, the element moyenne is
+.IR "max(SO, max(0.3\(muCC + 0.7\(muRat, Rat))" " (Art. 7),"
+and a module is validated per its own article-specified rule. Run
+.B "schoolapp explain CODE"
+to see the computation and the exact article applied to a given element.
+.SH CONFIGURATION
+Credentials and SMTP settings come from, in order of precedence: CLI flags,
+.BR --env-file / --config ,
+then the auto-loaded
+.I .env
+described under
+.BR GLOBAL\ OPTIONS .
+.PP
+Env vars:
+.IR SCHOOLAPP_EMAIL ", " SCHOOLAPP_PASSWORD ,
+.IR SMTP_HOST ", " SMTP_PORT ", " SMTP_USERNAME ", " SMTP_PASSWORD ", " SMTP_FROM ", " SMTP_TO .
+.PP
+Config file
+.RI ( ~/.schoolapp/config.toml ):
+.RS
+.nf
+[schoolapp]
+email = "you@example.com"
+password = "secret"
+
+[smtp]
+host = "smtp.gmail.com"
+port = 587
+username = "you@gmail.com"
+password = "app-password"
+from = "you@gmail.com"
+to = "you@gmail.com"
+.fi
+.RE
+.SH FILES
+.TP
+.I ~/.local/state/schoolapp
+The local store: everything
+.B Read
+commands and
+.B serve
+answer from.
+.TP
+.I ~/.schoolapp/config.toml
+Optional config file (credentials, SMTP).
+.TP
+.I .env " / " .env.example
+Project-local env file, auto-loaded if
+.B --env-file
+is not given.
+.SH EXAMPLES
+Log in once and populate the store:
+.RS
+.nf
+schoolapp fetch-all
+.fi
+.RE
+.PP
+Everyday offline check, and one semester's table:
+.RS
+.nf
+schoolapp
+schoolapp s4 table
+.fi
+.RE
+.PP
+Understand why an element passed or didn't:
+.RS
+.nf
+schoolapp explain API421
+.fi
+.RE
+.PP
+Export grades for a spreadsheet:
+.RS
+.nf
+schoolapp csv grades -o grades.csv
+.fi
+.RE
+.PP
+Point the plasmoid/Android app at a local read-through API:
+.RS
+.nf
+schoolapp --env-file .env serve
+.fi
+.RE
+.SH SEE ALSO
+.IR README.md ", " CLAUDE.md
+in the project checkout.

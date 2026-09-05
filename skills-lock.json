@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "pdf-to-markdown": {
+      "source": "pspdfkit-labs/nutrient-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/pdf-to-markdown/skills/pdf-to-markdown/SKILL.md",
+      "computedHash": "5dad7587f822fbc3189fca3943cfea63c3d8b1231a8a1f4ddbf5d1193de48d0c"
+    }
+  }
+}
