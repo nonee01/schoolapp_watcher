@@ -8,6 +8,7 @@ so they work identically for the CLI and any other store reader.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Iterable, Sequence
 
 from rich.console import Console, Group
@@ -200,6 +201,14 @@ def dashboard_view(profile: dict | None, semesters: list[dict],
         meta = " · ".join(x for x in (profile.get("filiere"), profile.get("niveau")) if x)
         if meta:
             line.append(f"  {meta}", style="muted")
+        # The filière/niveau above come from the cached profile. After a year
+        # rolls over they are simply wrong until the next fetch, and nothing
+        # else on the dashboard says so.
+        days = age_days(freshness.get("student/profile"))
+        if days is not None and days >= STALE_DAYS:
+            style = "fail" if days >= VERY_STALE_DAYS else "warning"
+            line.append(f"   ⚠ profile {days} days old — run `schoolapp fetch-all`",
+                        style=style)
         parts.append(line)
     if semesters:
         parts.append(semesters_table(semesters[-4:]))
@@ -209,8 +218,44 @@ def dashboard_view(profile: dict | None, semesters: list[dict],
     return Group(*parts)
 
 
+# A store older than this is stale enough that the identity it shows (filière,
+# niveau) may belong to a previous academic year. Two weeks is roughly the
+# cadence at which the portal publishes anything at all.
+STALE_DAYS = 14
+VERY_STALE_DAYS = 30
+
+
+def age_days(ts: str | None) -> int | None:
+    """Whole days between an ISO timestamp and now, or None if unparseable."""
+    if not ts:
+        return None
+    try:
+        when = datetime.fromisoformat(str(ts))
+    except ValueError:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return max(0, (datetime.now(timezone.utc) - when).days)
+
+
+def age_text(ts: str | None) -> Text:
+    """Human age with the severity baked in, so stale data cannot look fresh."""
+    days = age_days(ts)
+    if days is None:
+        return Text("--", style="muted")
+    if days == 0:
+        return Text("today", style="ok")
+    label = f"{days} day{'s' if days != 1 else ''}"
+    if days >= VERY_STALE_DAYS:
+        return Text(label, style="fail")
+    if days >= STALE_DAYS:
+        return Text(label, style="warning")
+    return Text(label, style="muted")
+
+
 def freshness_table(store_dir: str, freshness: dict[str, str | None]) -> Table:
-    table = data_table(f"State store: {store_dir}", ["Resource", "Fetched at (UTC)"], [])
+    table = data_table(f"State store: {store_dir}",
+                       ["Resource", "Fetched at (UTC)", "Age"], [])
     for name, ts in freshness.items():
-        table.add_row(name, ts or Text("- not cached", style="muted"))
+        table.add_row(name, ts or Text("- not cached", style="muted"), age_text(ts))
     return table

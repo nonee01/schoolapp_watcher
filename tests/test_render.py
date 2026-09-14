@@ -68,3 +68,53 @@ def test_changes_table_and_dashboard_view():
     assert "A B" in out and "S4" in out and "rattrapage" in out and "/tmp/store" in out
     # empty-safe
     assert _render(render.dashboard_view(None, [], {}, [], "/tmp/store"))
+
+
+# ── staleness: a two-month-old store must not look current ────────────────
+
+def test_age_text_flags_stale_and_very_stale():
+    from datetime import datetime, timedelta, timezone
+
+    from schoolapp import render
+
+    def iso(days):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    assert render.age_text(iso(0)).style == "ok"
+    assert render.age_text(iso(3)).style == "muted"
+    assert render.age_text(iso(20)).style == "warning"
+    assert render.age_text(iso(68)).style == "fail"
+    assert render.age_text(None).plain == "--"
+    assert render.age_text("not-a-date").plain == "--"
+
+
+def test_dashboard_warns_when_identity_comes_from_a_stale_profile():
+    from datetime import datetime, timedelta, timezone
+
+    from rich.console import Console
+
+    from schoolapp import render
+
+    old = (datetime.now(timezone.utc) - timedelta(days=68)).isoformat()
+    view = render.dashboard_view(
+        {"prenom": "A", "nom": "B", "filiere": "API-MPT", "niveau": "2A"},
+        [], {"student/profile": old}, [], "/tmp/store")
+    out = Console(theme=render.THEME, width=200, record=True)
+    out.print(view)
+    text = out.export_text()
+    assert "68 days old" in text and "fetch-all" in text
+
+
+def test_dashboard_quiet_when_profile_is_fresh():
+    from datetime import datetime, timezone
+
+    from rich.console import Console
+
+    from schoolapp import render
+
+    view = render.dashboard_view(
+        {"prenom": "A", "nom": "B", "filiere": "GE-DI", "niveau": "3A"},
+        [], {"student/profile": datetime.now(timezone.utc).isoformat()}, [], "/tmp/store")
+    out = Console(theme=render.THEME, width=200, record=True)
+    out.print(view)
+    assert "fetch-all" not in out.export_text()

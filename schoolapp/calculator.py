@@ -8,6 +8,7 @@ from pathlib import Path
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
+from rich.text import Text
 
 from .presets import ElementDef, ModuleDef, modules_for_semester
 from .utils import console
@@ -121,74 +122,80 @@ def _marks_from_snapshot(semester: str, snapshot_file: str | None) -> dict[str, 
     return marks
 
 
-def list_modules(semester: str, single_table: bool = False, show_module: str | None = None) -> None:
+def list_modules(semester: str, single_table: bool = False,
+                 show_module: str | None = None, coefs: bool = False) -> None:
+    """Modules and elements, showing what each assessment is actually worth.
+
+    The default columns are the share of the element decided by the tests
+    (contrôle continu), the exam and the TP — they sum to 100%. The raw
+    CoefCC/CoefEX/CoefEcrit/CoefTP behind them are shown with `--coefs`;
+    on their own they mislead, because CoefCC 0.3 on an element with a TP
+    is 20% of the mark, not 30%.
+    """
+    from . import academics as ac
+
     modules = modules_for_semester(semester)
     console.print(Panel.fit(f"{semester.upper()} - Modules et éléments", border_style="cyan"))
 
-    # Normalize show_module for case-insensitive compare
     show_module_norm = show_module.strip().upper() if show_module else None
 
-    if single_table:
-        table = Table(title=f"{semester.upper()} - Modules et éléments (consolidated)", header_style="bold magenta")
-        table.add_column("Module", style="bold")
+    def columns(table: Table, with_module: bool) -> None:
+        if with_module:
+            table.add_column("Module", style="bold")
         table.add_column("CodeElem", style="bold cyan")
         table.add_column("Intitule")
-        table.add_column("CoefCC", justify="right")
-        table.add_column("CoefEX", justify="right")
-        table.add_column("CoefEcrit", justify="right")
-        table.add_column("CoefTP", justify="right")
-        table.add_column("RATT", justify="center")
+        if coefs:
+            for c in ("CoefCC", "CoefEX", "CoefEcrit", "CoefTP"):
+                table.add_column(c, justify="right")
+        table.add_column("Test", justify="right")
+        table.add_column("Exam", justify="right")
+        table.add_column("TP", justify="right")
         table.add_column("CoefElem", justify="right")
 
+    def row(table: Table, module, el, with_module: bool) -> None:
+        sh = ac.element_shares(el)
+        cells = [module.code] if with_module else []
+        cells += [el.code, el.title]
+        if coefs:
+            cells += [f"{el.coef_cc:.2f}", f"{el.coef_ex:.2f}",
+                      f"{el.coef_ecrit:.2f}", f"{el.coef_tp:.2f}"]
+        def pct(v: float, style: str | None = None) -> Text:
+            txt = "--" if v == 0 else f"{v:.0%}"
+            return Text(txt, style=style or ("muted" if v == 0 else ""))
+        # The TP is the only component with no second session (art. 8).
+        cells += [pct(sh["test"]), pct(sh["exam"]),
+                  pct(sh["tp"], "rat" if sh["tp"] else "muted"),
+                  f"{el.coef_eelem:.2f}"]
+        table.add_row(*cells)
+
+    if single_table:
+        table = Table(title=f"{semester.upper()} - Modules et éléments (consolidated)",
+                      header_style="bold magenta")
+        columns(table, with_module=True)
         for module in modules:
             if show_module_norm and module.code.upper() != show_module_norm:
                 continue
             for el in module.elements:
-                table.add_row(
-                    module.code,
-                    el.code,
-                    el.title,
-                    f"{el.coef_cc:.2f}",
-                    f"{el.coef_ex:.2f}",
-                    f"{el.coef_ecrit:.2f}",
-                    f"{el.coef_tp:.2f}",
-                    "--",
-                    f"{el.coef_eelem:.2f}",
-                )
-
+                row(table, module, el, with_module=True)
         console.print(table)
+        console.print("[muted]Test / Exam / TP = part de l'élément décidée par chacun "
+                      "(somme 100%). Le TP ne se rattrape jamais (art. 8).[/muted]")
         return
 
     for module in modules:
         if show_module_norm and module.code.upper() != show_module_norm:
             continue
-
         table = Table(
             title=f"{module.code} - {module.title} (CoefMod {module.coef_mod:.2f})",
             header_style="bold magenta",
         )
-        table.add_column("CodeElem", style="bold cyan")
-        table.add_column("Intitule")
-        table.add_column("CoefCC", justify="right")
-        table.add_column("CoefEX", justify="right")
-        table.add_column("CoefEcrit", justify="right")
-        table.add_column("CoefTP", justify="right")
-        table.add_column("RATT", justify="center")
-        table.add_column("CoefElem", justify="right")
-
+        columns(table, with_module=False)
         for el in module.elements:
-            table.add_row(
-                el.code,
-                el.title,
-                f"{el.coef_cc:.2f}",
-                f"{el.coef_ex:.2f}",
-                f"{el.coef_ecrit:.2f}",
-                f"{el.coef_tp:.2f}",
-                "--",
-                f"{el.coef_eelem:.2f}",
-            )
-
+            row(table, module, el, with_module=False)
         console.print(table)
+
+    console.print("[muted]Test / Exam / TP = part de l'élément décidée par chacun "
+                  "(somme 100%). Le TP ne se rattrape jamais (art. 8).[/muted]")
 
 
 def run_calculator(

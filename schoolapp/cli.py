@@ -21,10 +21,10 @@ from .extractors.catalog_presets import (
     reconcile,
     to_module_def,
 )
-from .presets import PRESET_2A_S3, PRESET_2A_S4
+from .presets import _PRESETS
 from .render import console, err_console
-from .semesters.s3 import app as s3_app
-from .semesters.s4 import app as s4_app
+from .semesters.s5 import app as s5_app
+from .semesters.s6 import app as s6_app
 from .utils import AppContext, banner, load_config, load_env_file, log
 from .utils import resolve_credentials
 from .utils import set_log_level, set_quiet
@@ -46,16 +46,16 @@ app = typer.Typer(
         "store and API.\n\n"
         "Fetch (profile, fetch-all, export, catalog crawl) writes the store; "
         "serve exposes that same store over the API the plasmoid/Android app read; "
-        "status shows what it would serve. s3/s4 are the per-semester namespaces."
+        "status shows what it would serve. s5/s6 are the per-semester namespaces."
     ),
     epilog=("Examples: schoolapp             (dashboard)   |  schoolapp changes\n"
             "          schoolapp explain API421   |  schoolapp csv grades -o grades.csv\n"
-            "          schoolapp s4 table  |  schoolapp serve\n"
+            "          schoolapp s5 table  |  schoolapp serve\n"
             "Shell completion: schoolapp --install-completion"),
 )
 
-app.add_typer(s3_app, name="s3", help="Semester S3 namespace", rich_help_panel="Semesters")
-app.add_typer(s4_app, name="s4", help="Semester S4 namespace", rich_help_panel="Semesters")
+app.add_typer(s5_app, name="s5", help="Semester S5 namespace (3A, first semester)", rich_help_panel="Semesters")
+app.add_typer(s6_app, name="s6", help="Semester S6 namespace (3A, second semester)", rich_help_panel="Semesters")
 
 catalog_app = typer.Typer(no_args_is_help=True, help="Institution-wide curriculum catalog")
 app.add_typer(catalog_app, name="catalog", rich_help_panel="Catalog")
@@ -531,7 +531,7 @@ def _resolve_year_row(rows, label):
 @app.command("promo-sem", rich_help_panel="Live (portal login)")
 def promo_sem_cmd(
     ctx: typer.Context,
-    semestre: Optional[str] = typer.Argument(None, help="Semester label, e.g. S1 S2 S3 S4 (default: latest)"),
+    semestre: Optional[str] = typer.Argument(None, help="Semester label, e.g. S3 S4 S5 S6 (default: latest)"),
     out_dir: str = typer.Option(".", "--out-dir", "-o", help="Directory for the CSV/PNG artifacts"),
     bin: float = typer.Option(1.0, "--bin", min=0.1, help="Histogram bin width"),
     no_plot: bool = typer.Option(False, "--no-plot", help="Skip the PNG figure"),
@@ -709,8 +709,8 @@ def catalog_crawl(
     filiere_models = client.filieres()
     store.save_resource("catalog/filieres", filiere_models, source=FILIERES_PATH)
 
-    mismatches = reconcile([to_module_def(m) for m in merged.values()],
-                           list(PRESET_2A_S3) + list(PRESET_2A_S4))
+    all_presets = [m for mods in _PRESETS.values() for m in mods]
+    mismatches = reconcile([to_module_def(m) for m in merged.values()], all_presets)
     for msg in mismatches:
         log("WARNING", f"catalog≠presets: {msg}")
 
@@ -732,6 +732,58 @@ def catalog_crawl(
         f"{len(filiere_models)} filières, {progress['errors']} errors -> "
         f"{store.resource_path(CATALOG_RESOURCE)}"
     )
+
+
+@catalog_app.command("weights")
+def catalog_weights(
+    niveau: str = typer.Argument(..., help="e.g. 3A"),
+    filiere: str = typer.Argument(..., help="e.g. GE-DI"),
+    semestre: str = typer.Argument(..., help="Absolute semester, e.g. S1"),
+    json_out: bool = typer.Option(False, "--json", help="Machine-readable output"),
+) -> None:
+    """What each element is actually worth, heaviest first.
+
+    A module's coefficient is split between its elements by CoefElem, so
+    séance count is a poor guide to what matters. Also shows what is already
+    decided before the exams: CC, TP, both, or nothing.
+    """
+    import json as _json
+
+    from . import academics as ac
+    from .utils import console
+
+    defs = module_defs(niveau, filiere, semestre)
+    if not defs:
+        console.print("[yellow]No cached modules for this combo - run "
+                      "`schoolapp catalog crawl` first.[/yellow]")
+        raise typer.Exit(code=1)
+
+    rows = ac.semester_weights(defs)
+    if json_out:
+        console.print_json(_json.dumps(rows))
+        return
+
+    table = Table(title=f"{filiere} {niveau} {semestre} - {len(rows)} éléments, "
+                        f"coef total {sum(r['weight'] for r in rows):.0f}",
+                  header_style="bold magenta")
+    for col, just in (("Poids", "right"), ("Élément", "left"), ("Module", "left"),
+                      ("CoefCC", "right"), ("TP", "right"), ("Acquis", "left")):
+        table.add_column(col, justify=just)
+    for r in rows:
+        weight = f"{r['weight']:.2f}"
+        banked = r["banked"] or "rien"
+        style = None
+        if not r["banked"]:
+            style = "bold red"        # nothing banked: 100% exam
+        elif r["banked"] == "TP":
+            style = "yellow"          # only the unrecoverable part is banked
+        table.add_row(weight, r["title"][:34], r["module"],
+                      f"{r['coef_cc']:.1f}",
+                      f"{r['tp_share']:.0%}" if r["coef_tp"] else "-",
+                      banked, style=style)
+    console.print(table)
+    console.print("[muted]Poids = coef module x (CoefElem / total CoefElem du module). "
+                  "« rien » = CoefCC 0 et CoefTP 0 : rien n'est acquis avant l'examen.[/muted]")
 
 
 @catalog_app.command("show")
