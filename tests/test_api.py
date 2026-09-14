@@ -129,3 +129,20 @@ def test_promo_endpoint_reads_cache(client):
     assert r.status_code == 200
     assert r.get_json()["promo"]["NoteRAT"] == [[14.5, 1], [20.0, 2]]
     assert client.get("/api/promo/ZZZ999").status_code == 404
+
+
+def test_current_semester_follows_the_newest_snapshot(monkeypatch, tmp_path):
+    """/api/status and /api/check named "S4" outright, so the day the student
+    moved up a year the API reported the age of a file nothing writes any more."""
+    import os
+
+    from schoolapp.api import _current_semester
+    from schoolapp.watcher import Snapshot, _save_snapshot, _snapshot_path
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    for semester, mtime in (("S4", 1_600_000_000), ("S5", 1_700_000_000)):
+        path = _snapshot_path(semester, None)
+        _save_snapshot(path, Snapshot(headers=["CodeElem"], rows=[], fingerprint="fp"))
+        os.utime(path, (mtime, mtime))
+
+    assert _current_semester() == "S5"

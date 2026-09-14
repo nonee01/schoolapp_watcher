@@ -30,7 +30,7 @@ from .extractors._tables import (
     normalize_cell as _normalize_cell,
 )
 from .models import Absence, ModuleGrade, Sanction, SemesterResult
-from .presets import modules_for_semester
+from .presets import available_semesters, modules_for_semester
 from .calculator import _to_float, _calc_element_grade, _calc_element_rattrapage
 from .tokens import color as _tok
 from .utils import console, log
@@ -566,10 +566,10 @@ def _semesters_blob(items: list[SemesterResult]) -> dict[str, dict[str, str]]:
 
 
 def _all_titles() -> tuple[dict[str, str], dict[str, str]]:
-    """Element and module titles across both semesters."""
+    """Element and module titles across every semester the presets describe."""
     elements: dict[str, str] = {}
     modules: dict[str, str] = {}
-    for sem in ("S3", "S4"):
+    for sem in available_semesters():
         try:
             for m in modules_for_semester(sem):
                 modules[m.code.upper()] = m.title

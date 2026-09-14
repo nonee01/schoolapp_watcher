@@ -1,9 +1,11 @@
 import json
 
+import pytest
 from typer.testing import CliRunner
 
-from schoolapp import cli, store, watcher
+from schoolapp import cli, presets, store, watcher
 from schoolapp.cli import app
+from schoolapp.semesters import _factory
 from schoolapp.extractors.catalog import parse_catalog_modules
 from schoolapp.extractors.catalog_presets import CATALOG_RESOURCE
 from schoolapp.models import Document, StudentData, StudentProfile
@@ -332,3 +334,86 @@ def test_promo_year_resolves_label(tmp_path, monkeypatch):
     import csv as _csv
     summ = next(iter(_csv.DictReader((out / "promo_2A_MoyAn_summary.csv").open())))
     assert summ["your_note"] == "12.824" and summ["your_rank"] == "125 / 419"
+
+
+def _fake_check_once(seen: dict, headers: list[str], rows: list[list[str]]):
+    """Stand in for the network fetch and leave a snapshot where the real one would."""
+
+    def fake(**kwargs):
+        seen.update(kwargs)
+        path = watcher._snapshot_path(kwargs["semester"], kwargs["state_file"])
+        watcher._save_snapshot(path, watcher.Snapshot(headers=headers, rows=rows, fingerprint="fp"))
+        return 0
+
+    return fake
+
+
+@pytest.mark.parametrize(
+    "namespace,element,title",
+    [("s5", "LE11", "Langue Anglaise"), ("s6", "LE21", "Langue Anglaise")],
+)
+def test_semester_table_passes_the_semester_not_the_exit_code(
+    namespace, element, title, tmp_path, monkeypatch
+):
+    """The factory bound one name, `code`, to both the semester label and the exit
+    code of check_once. Assigning it made it local to the whole command, so the
+    read that fed `semester=` raised UnboundLocalError before any request went out.
+
+    The semester has to reach three callees: check_once, the snapshot path, and
+    the renderer. Passing the exit code to either of the last two dies on int.
+    """
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    seen: dict = {}
+    monkeypatch.setattr(_factory, "check_once", _fake_check_once(seen, ["CodeElem"], [[element]]))
+
+    result = runner.invoke(app, [namespace, "table", "--email", "a@b.test", "--password", "pw"])
+
+    assert result.exit_code == 0, result.output
+    assert seen["semester"] == namespace.upper()
+    assert (tmp_path / "schoolapp" / f"{namespace}_snapshot.json").exists()
+    assert f"{namespace.upper()} - Consolidated marks table" in result.output
+    assert title in result.output
+
+
+def test_semester_watch_once_passes_the_semester_not_the_exit_code(tmp_path, monkeypatch):
+    """watch --once carried the same collision, and here `code` really is the exit code."""
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    seen: dict = {}
+    monkeypatch.setattr(_factory, "check_once", _fake_check_once(seen, ["CodeElem"], []))
+
+    result = runner.invoke(app, ["s5", "watch", "--once", "--email", "a@b.test", "--password", "pw"])
+
+    assert result.exit_code == 0, result.output
+    assert seen["semester"] == "S5"
+
+
+@pytest.mark.parametrize("argv", [
+    ["explain"],
+    ["csv"],
+    ["catalog", "weights"],
+    ["catalog", "show"],
+    ["s5", "details"],
+])
+def test_missing_required_argument_prints_usage(argv, tmp_path, monkeypatch):
+    """typer 0.16 against click >= 8.2 handed every required argument through as
+    None instead of refusing the call, so each of these commands answered a bare
+    invocation with an AttributeError traceback rather than its usage line.
+
+    The pin in pyproject is the fix; this is the behaviour it buys.
+    """
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    result = runner.invoke(app, argv)
+    assert result.exit_code == 2, result.output
+    assert not isinstance(result.exception, AttributeError)
+    assert "Usage:" in result.output or "Missing argument" in result.output
+
+
+def test_titles_resolve_for_every_preset_semester():
+    """The digests and the API label elements through _all_titles, which walked a
+    hardcoded ("S3", "S4"): every 3A element showed up as a bare code."""
+    elements, modules = watcher._all_titles()
+    for semester in presets.available_semesters():
+        for module in presets.modules_for_semester(semester):
+            assert modules.get(module.code.upper()) == module.title
+            for element in module.elements:
+                assert elements.get(element.code.upper()) == element.title

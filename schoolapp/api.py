@@ -10,7 +10,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_file
 
 from . import store
-from .presets import modules_for_semester
+from .presets import available_semesters, modules_for_semester
 from .watcher import (
     SLOW_INTERVAL,
     SLOW_WINDOW,
@@ -56,12 +56,28 @@ def _active_interval() -> int:
     return SLOW_INTERVAL if SLOW_WINDOW[0] <= hour < SLOW_WINDOW[1] else _POLL_INTERVAL
 
 
+def _current_semester() -> str:
+    """The semester the watcher most recently wrote a snapshot for.
+
+    These endpoints used to name "S4" outright, so the day the student moved
+    up a year /api/status started reporting the age of a file nothing writes
+    any more, and /api/check refetched last year on demand.
+    """
+    known = available_semesters()
+    newest, newest_mtime = (known[-1] if known else "S1"), -1.0
+    for sem in known:
+        path = _snapshot_path(sem, None)
+        if path.exists() and path.stat().st_mtime > newest_mtime:
+            newest, newest_mtime = sem, path.stat().st_mtime
+    return newest
+
+
 @app.get("/api/status")
 def status():
     err = _auth()
     if err:
         return err
-    snap_path = _snapshot_path("S4", None)
+    snap_path = _snapshot_path(_current_semester(), None)
     last_check = None
     next_check = None
     if snap_path.exists():
@@ -138,8 +154,8 @@ def grades(semester: str):
     return jsonify({"semester": sem, "modules": out_modules})
 
 
-def _extras(sem: str = "S4") -> dict:
-    snap = _load_snapshot(_snapshot_path(sem, None))
+def _extras(sem: str | None = None) -> dict:
+    snap = _load_snapshot(_snapshot_path(sem or _current_semester(), None))
     if snap is None or not isinstance(snap.extras, dict):
         return {}
     return snap.extras
@@ -206,7 +222,7 @@ def history():
         limit = min(max(int(request.args.get("limit", 100)), 1), 1000)
     except (ValueError, TypeError):
         limit = 100
-    path = _history_path("S4", None)
+    path = _history_path(_current_semester(), None)
     entries: list[dict] = []
     if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -231,7 +247,7 @@ def force_check():
         return jsonify({"error": "Credentials not configured"}), 503
     if not _check_lock.acquire(blocking=False):
         return jsonify({"error": "A check is already running"}), 409
-    sem = request.args.get("semester", "S4").upper()
+    sem = request.args.get("semester", _current_semester()).upper()
     try:
         code = check_once(
             email=email,
