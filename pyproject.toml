@@ -11,12 +11,22 @@ dependencies = [
   "requests==2.32.5",
   "beautifulsoup4==4.12.3",
   "rich==13.9.4",
-  "typer==0.16.0",
+  # typer 0.16 stopped enforcing required arguments once click reached 8.2:
+  # every command with a positional argument accepted zero of them and died in
+  # an AttributeError on None instead of printing usage. click arrives as a
+  # transitive dependency and floated there on its own, so it is pinned too.
+  "typer==0.27.2",
+  "click==8.4.1",
   "tomli==2.2.1",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest==8.3.4"]
+# Imported lazily by `serve` and by the promo histograms. Undeclared until now,
+# so a fresh install produced a CLI whose serve and --plot died on ImportError.
+serve = ["Flask==3.1.1", "waitress==3.0.1"]
+plots = ["matplotlib==3.11.0"]
+keyring = ["keyring"]  # optional password store; the import is already guarded
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
