@@ -14,6 +14,29 @@ Production-oriented CLI for ENSAM SchoolApp with semester namespaces:
 - Optional SMTP notifications
 - Rich output (tables, panels, color logs)
 
+## Screenshots
+
+Fabricated data: the module codes and coefficients are the real published ones,
+so the règlement walkthrough uses the coefficients it would actually use, but
+every mark, ranking and change below is invented.
+
+![The dashboard, answered from the local store](docs/media/01-dashboard.png)
+
+Who you are, the latest results, the change feed, and how stale each cached
+resource is. No network involved.
+
+![Règlement walkthrough for one element](docs/media/02-explain.png)
+
+`schoolapp explain API421`. An element sent to rattrapage, walked through
+article by article. The rows marked *calculé* are the ones the portal has not
+published yet, computed from the official text rather than waited for.
+
+![The grouped command surface](docs/media/03-help.png)
+
+Commands are grouped by what they cost: reads that never leave the machine,
+fetches that log into the portal, and the server the plasmoid and the Android
+app read.
+
 ## Installation
 
 ### Local editable install (recommended)
