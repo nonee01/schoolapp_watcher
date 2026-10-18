@@ -1,0 +1,38 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": [
+  {
+   "key": "Absences non justifiées",
+   "value": "2",
+   "raw": {
+    "key": "Absences non justifiées",
+    "value": "2"
+   }
+  },
+  {
+   "key": "Absences justifiées",
+   "value": "4",
+   "raw": {
+    "key": "Absences justifiées",
+    "value": "4"
+   }
+  },
+  {
+   "key": "Sanction",
+   "value": "2",
+   "raw": {
+    "key": "Sanction",
+    "value": "2"
+   }
+  },
+  {
+   "key": "Message",
+   "value": "Avertissement",
+   "raw": {
+    "key": "Message",
+    "value": "Avertissement"
+   }
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": {
+  "empty": true,
+  "message": "Vous n'avez pas de note de diplome pour le moment !",
+  "rows": [],
+  "raw": {}
+ }
+}

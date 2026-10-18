@@ -1,0 +1,68 @@
+[
+ {
+  "niveau": "1A",
+  "semestre": "S1",
+  "au": "2024-2025",
+  "moy_sem": "12.573",
+  "pj": "0.0",
+  "decision": "--",
+  "classement": "224 / 423",
+  "releve_url": "/student/documents/relevesem?niveau=1A&semestre=S1",
+  "raw": {
+   "Niveau": "1A",
+   "Filière": "API-MPT",
+   "Semestre": "S1",
+   "AU": "2024-2025",
+   "Statut": "NI",
+   "Moy SEM": "12.573",
+   "PJ": "0.0",
+   "Decesion": "--",
+   "Classement": "224 / 423",
+   "Relevé de Notes": ""
+  }
+ },
+ {
+  "niveau": "1A",
+  "semestre": "S2",
+  "au": "2024-2025",
+  "moy_sem": "14.795",
+  "pj": "0.0",
+  "decision": "--",
+  "classement": "51 / 419",
+  "releve_url": "/student/documents/relevesem?niveau=1A&semestre=S2",
+  "raw": {
+   "Niveau": "1A",
+   "Filière": "API-MPT",
+   "Semestre": "S2",
+   "AU": "2024-2025",
+   "Statut": "NI",
+   "Moy SEM": "14.795",
+   "PJ": "0.0",
+   "Decesion": "--",
+   "Classement": "51 / 419",
+   "Relevé de Notes": ""
+  }
+ },
+ {
+  "niveau": "2A",
+  "semestre": "S3",
+  "au": "2025-2026",
+  "moy_sem": "12.652",
+  "pj": "0.0",
+  "decision": "--",
+  "classement": "165 / 419",
+  "releve_url": "/student/documents/relevesem?niveau=2A&semestre=S3",
+  "raw": {
+   "Niveau": "2A",
+   "Filière": "API-MPT",
+   "Semestre": "S3",
+   "AU": "2025-2026",
+   "Statut": "NI",
+   "Moy SEM": "12.652",
+   "PJ": "0.0",
+   "Decesion": "--",
+   "Classement": "165 / 419",
+   "Relevé de Notes": ""
+  }
+ }
+]

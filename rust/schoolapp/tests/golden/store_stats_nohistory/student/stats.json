@@ -1,0 +1,1206 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": [
+  {
+   "element": "API311",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "14.93",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API321",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "12.88",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API322",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "11.16",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API331",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "15.34",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API332",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "9.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API341",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "13.23",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API341",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "13.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API342",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "17.83",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API342",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "18.5",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API351",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "10.3",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API351",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "6.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API352",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "9.08",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API352",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "7.5",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API361",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "13.78",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API362",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "14.1",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API371",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "14.7",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API372",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "14.7",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API411",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "13.43",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API421",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "9.08",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API421",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "14.5",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API431",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "11.33",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API441",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "14.98",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API442",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "9.88",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API451",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "11.14",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API452",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "8.6",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API452",
+   "eval_kind": "NoteRAT",
+   "au": "2025-2026",
+   "note": "15.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API461",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "16.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API462",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "18.86",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API471",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "16.4",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  },
+  {
+   "element": "API472",
+   "eval_kind": "MoyElem",
+   "au": "2025-2026",
+   "note": "17.0",
+   "title": "Statistiques MoyElem - API311 - 2025-2026",
+   "rows": [
+    [
+     "Votre note",
+     "14.93"
+    ],
+    [
+     "Moyenne promo",
+     "12.49"
+    ],
+    [
+     "Max",
+     "19.35"
+    ],
+    [
+     "Min",
+     "0.0"
+    ],
+    [
+     "Ecart type",
+     "3.02"
+    ],
+    [
+     "Effectif",
+     "408"
+    ],
+    [
+     "Votre classement",
+     "75"
+    ]
+   ],
+   "raw": {
+    "title": "Statistiques MoyElem - API311 - 2025-2026"
+   }
+  }
+ ]
+}

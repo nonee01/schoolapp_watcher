@@ -1,0 +1,86 @@
+[
+ {
+  "element": "API472",
+  "date": "2026-05-11",
+  "seance": "Seance 3",
+  "justified": true,
+  "remarks": "",
+  "raw": {
+   "Element": "API472",
+   "Date": "2026-05-11 00:00:00",
+   "Seance": "Seance 3",
+   "Justif": "true",
+   "Remarques": ""
+  }
+ },
+ {
+  "element": "API452",
+  "date": "2026-05-11",
+  "seance": "Seance 2",
+  "justified": true,
+  "remarks": "",
+  "raw": {
+   "Element": "API452",
+   "Date": "2026-05-11 00:00:00",
+   "Seance": "Seance 2",
+   "Justif": "true",
+   "Remarques": ""
+  }
+ },
+ {
+  "element": "API411",
+  "date": "2026-03-27",
+  "seance": "Seance 3",
+  "justified": false,
+  "remarks": "",
+  "raw": {
+   "Element": "API411",
+   "Date": "2026-03-27 00:00:00",
+   "Seance": "Seance 3",
+   "Justif": "false",
+   "Remarques": ""
+  }
+ },
+ {
+  "element": "API442",
+  "date": "2026-03-27",
+  "seance": "Seance 1",
+  "justified": false,
+  "remarks": "",
+  "raw": {
+   "Element": "API442",
+   "Date": "2026-03-27 00:00:00",
+   "Seance": "Seance 1",
+   "Justif": "false",
+   "Remarques": ""
+  }
+ },
+ {
+  "element": "API471",
+  "date": "2026-03-16",
+  "seance": "Seance 3",
+  "justified": true,
+  "remarks": "",
+  "raw": {
+   "Element": "API471",
+   "Date": "2026-03-16 00:00:00",
+   "Seance": "Seance 3",
+   "Justif": "true",
+   "Remarques": ""
+  }
+ },
+ {
+  "element": "API452",
+  "date": "2026-03-16",
+  "seance": "Seance 2",
+  "justified": true,
+  "remarks": "",
+  "raw": {
+   "Element": "API452",
+   "Date": "2026-03-16 00:00:00",
+   "Seance": "Seance 2",
+   "Justif": "true",
+   "Remarques": ""
+  }
+ }
+]

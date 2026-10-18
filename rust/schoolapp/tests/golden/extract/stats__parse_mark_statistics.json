@@ -1,0 +1,40 @@
+{
+ "element": "ELEM1",
+ "eval_kind": "MoyElem",
+ "au": "2025/2026",
+ "note": "12.50",
+ "title": "Statistiques MoyElem - API311 - 2025-2026",
+ "rows": [
+  [
+   "Votre note",
+   "14.93"
+  ],
+  [
+   "Moyenne promo",
+   "12.49"
+  ],
+  [
+   "Max",
+   "19.35"
+  ],
+  [
+   "Min",
+   "0.0"
+  ],
+  [
+   "Ecart type",
+   "3.02"
+  ],
+  [
+   "Effectif",
+   "408"
+  ],
+  [
+   "Votre classement",
+   "75"
+  ]
+ ],
+ "raw": {
+  "title": "Statistiques MoyElem - API311 - 2025-2026"
+ }
+}

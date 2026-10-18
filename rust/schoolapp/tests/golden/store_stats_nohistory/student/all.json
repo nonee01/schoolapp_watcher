@@ -1,0 +1,2875 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": {
+  "profile": {
+   "code": "STU0000",
+   "cne_masar": "X000000000",
+   "nom": "Doe",
+   "prenom": "Jane",
+   "nom_ar": "Doe",
+   "prenom_ar": "Jane",
+   "cin": "AA000000",
+   "sexe": "M",
+   "date_naissance": "01/01/2000",
+   "email": "student@example.test",
+   "filiere": "API-MPT",
+   "niveau": "2A",
+   "statut": "NI",
+   "section": "Sec6",
+   "groupe": "",
+   "sous_groupe": "SG63",
+   "photo_url": "photo.png",
+   "raw": {
+    "Code": "STU0000",
+    "Filière": "API-MPT",
+    "Niveau": "2A",
+    "Statut": "NI",
+    "Section": "Sec6",
+    "Groupe": "",
+    "Sous Groupe": "SG63",
+    "CNE/Masar": "X000000000",
+    "Nom": "Doe",
+    "Prénom": "Jane",
+    "Nom Arabe": "Doe",
+    "Prénom Arabe": "Jane",
+    "CIN": "AA000000",
+    "Sexe": "M",
+    "Date Naissance": "01/01/2000",
+    "Email": "student@example.test",
+    "Téléphone": "0600000000",
+    "Série BAC": "SM",
+    "Année BAC": "2024",
+    "Niveau Accès": "1A",
+    "Annee Accès": "2024",
+    "Voie Accès": "Concours 1A",
+    "Nationalité": "MAROCAINE",
+    "Académie": "ACADEMIE SOUSS MASSA",
+    "Lieu_Naissance": "Exempleville",
+    "Prof_Père": "Employé",
+    "Prof_Mère": "Employé",
+    "Adr_Parents": "",
+    "Ville": "",
+    "Tel_Parents": ""
+   }
+  },
+  "element_grades": [
+   {
+    "code": "API311",
+    "au": "2025-2026",
+    "cc": "16.5",
+    "ex": "14.25",
+    "tp": "--",
+    "moy_so": "14.93",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "14.93",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API311",
+     "AU": "2025-2026",
+     "CC": "16.5",
+     "EX": "14.25",
+     "TP": "--",
+     "MoySO": "14.93",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "14.93",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API321",
+    "au": "2025-2026",
+    "cc": "12.0",
+    "ex": "12.5",
+    "tp": "15.5",
+    "moy_so": "12.88",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "12.88",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API321",
+     "AU": "2025-2026",
+     "CC": "12.0",
+     "EX": "12.5",
+     "TP": "15.5",
+     "MoySO": "12.88",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "12.88",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API322",
+    "au": "2025-2026",
+    "cc": "--",
+    "ex": "9.25",
+    "tp": "16.88",
+    "moy_so": "11.16",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "11.16",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API322",
+     "AU": "2025-2026",
+     "CC": "--",
+     "EX": "9.25",
+     "TP": "16.88",
+     "MoySO": "11.16",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "11.16",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API331",
+    "au": "2025-2026",
+    "cc": "15.6",
+    "ex": "15.23",
+    "tp": "--",
+    "moy_so": "15.34",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "15.34",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API331",
+     "AU": "2025-2026",
+     "CC": "15.6",
+     "EX": "15.23",
+     "TP": "--",
+     "MoySO": "15.34",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "15.34",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API332",
+    "au": "2025-2026",
+    "cc": "--",
+    "ex": "7.0",
+    "tp": "15.0",
+    "moy_so": "9.0",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "9.0",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API332",
+     "AU": "2025-2026",
+     "CC": "--",
+     "EX": "7.0",
+     "TP": "15.0",
+     "MoySO": "9.0",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "9.0",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API341",
+    "au": "2025-2026",
+    "cc": "7.5",
+    "ex": "2.0",
+    "tp": "14.25",
+    "moy_so": "5.58",
+    "rat": "13.0",
+    "moy_sr": "13.23",
+    "moy": "13.23",
+    "decision": "VRAT",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API341",
+     "AU": "2025-2026",
+     "CC": "7.5",
+     "EX": "2.0",
+     "TP": "14.25",
+     "MoySO": "5.58",
+     "RAT": "13.0",
+     "MoySR": "13.23",
+     "Moy": "13.23",
+     "Dec": "VRAT"
+    }
+   },
+   {
+    "code": "API342",
+    "au": "2025-2026",
+    "cc": "--",
+    "ex": "7.5",
+    "tp": "15.5",
+    "moy_so": "9.28",
+    "rat": "18.5",
+    "moy_sr": "17.83",
+    "moy": "17.83",
+    "decision": "VRAT",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API342",
+     "AU": "2025-2026",
+     "CC": "--",
+     "EX": "7.5",
+     "TP": "15.5",
+     "MoySO": "9.28",
+     "RAT": "18.5",
+     "MoySR": "17.83",
+     "Moy": "17.83",
+     "Dec": "VRAT"
+    }
+   },
+   {
+    "code": "API351",
+    "au": "2025-2026",
+    "cc": "11.0",
+    "ex": "10.0",
+    "tp": "--",
+    "moy_so": "10.3",
+    "rat": "6.0",
+    "moy_sr": "7.5",
+    "moy": "10.3",
+    "decision": "NV",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API351",
+     "AU": "2025-2026",
+     "CC": "11.0",
+     "EX": "10.0",
+     "TP": "--",
+     "MoySO": "10.3",
+     "RAT": "6.0",
+     "MoySR": "7.5",
+     "Moy": "10.3",
+     "Dec": "NV"
+    }
+   },
+   {
+    "code": "API352",
+    "au": "2025-2026",
+    "cc": "12.75",
+    "ex": "7.0",
+    "tp": "--",
+    "moy_so": "8.73",
+    "rat": "7.5",
+    "moy_sr": "9.08",
+    "moy": "9.08",
+    "decision": "NV",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API352",
+     "AU": "2025-2026",
+     "CC": "12.75",
+     "EX": "7.0",
+     "TP": "--",
+     "MoySO": "8.73",
+     "RAT": "7.5",
+     "MoySR": "9.08",
+     "Moy": "9.08",
+     "Dec": "NV"
+    }
+   },
+   {
+    "code": "API361",
+    "au": "2025-2026",
+    "cc": "14.0",
+    "ex": "13.68",
+    "tp": "--",
+    "moy_so": "13.78",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "13.78",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API361",
+     "AU": "2025-2026",
+     "CC": "14.0",
+     "EX": "13.68",
+     "TP": "--",
+     "MoySO": "13.78",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "13.78",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API362",
+    "au": "2025-2026",
+    "cc": "19.0",
+    "ex": "12.0",
+    "tp": "--",
+    "moy_so": "14.1",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "14.1",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API362",
+     "AU": "2025-2026",
+     "CC": "19.0",
+     "EX": "12.0",
+     "TP": "--",
+     "MoySO": "14.1",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "14.1",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API371",
+    "au": "2025-2026",
+    "cc": "14.0",
+    "ex": "15.0",
+    "tp": "--",
+    "moy_so": "14.7",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "14.7",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API371",
+     "AU": "2025-2026",
+     "CC": "14.0",
+     "EX": "15.0",
+     "TP": "--",
+     "MoySO": "14.7",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "14.7",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API372",
+    "au": "2025-2026",
+    "cc": "14.0",
+    "ex": "15.0",
+    "tp": "--",
+    "moy_so": "14.7",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "14.7",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API372",
+     "AU": "2025-2026",
+     "CC": "14.0",
+     "EX": "15.0",
+     "TP": "--",
+     "MoySO": "14.7",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "14.7",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API411",
+    "au": "2025-2026",
+    "cc": "11.5",
+    "ex": "14.25",
+    "tp": "--",
+    "moy_so": "13.43",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "13.43",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API411",
+     "AU": "2025-2026",
+     "CC": "11.5",
+     "EX": "14.25",
+     "TP": "--",
+     "MoySO": "13.43",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "13.43",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API421",
+    "au": "2025-2026",
+    "cc": "16.25",
+    "ex": "6.0",
+    "tp": "--",
+    "moy_so": "9.08",
+    "rat": "14.5",
+    "moy_sr": "--",
+    "moy": "9.08",
+    "decision": "RAT",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API421",
+     "AU": "2025-2026",
+     "CC": "16.25",
+     "EX": "6.0",
+     "TP": "--",
+     "MoySO": "9.08",
+     "RAT": "14.5",
+     "MoySR": "--",
+     "Moy": "9.08",
+     "Dec": "RAT"
+    }
+   },
+   {
+    "code": "API431",
+    "au": "2025-2026",
+    "cc": "9.75",
+    "ex": "12.0",
+    "tp": "--",
+    "moy_so": "11.33",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "11.33",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API431",
+     "AU": "2025-2026",
+     "CC": "9.75",
+     "EX": "12.0",
+     "TP": "--",
+     "MoySO": "11.33",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "11.33",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API441",
+    "au": "2025-2026",
+    "cc": "17.18",
+    "ex": "14.0",
+    "tp": "15.23",
+    "moy_so": "14.98",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "14.98",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API441",
+     "AU": "2025-2026",
+     "CC": "17.18",
+     "EX": "14.0",
+     "TP": "15.23",
+     "MoySO": "14.98",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "14.98",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API442",
+    "au": "2025-2026",
+    "cc": "--",
+    "ex": "9.0",
+    "tp": "16.0",
+    "moy_so": "9.88",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "9.88",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API442",
+     "AU": "2025-2026",
+     "CC": "--",
+     "EX": "9.0",
+     "TP": "16.0",
+     "MoySO": "9.88",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "9.88",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API451",
+    "au": "2025-2026",
+    "cc": "--",
+    "ex": "6.75",
+    "tp": "17.0",
+    "moy_so": "11.14",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "11.14",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API451",
+     "AU": "2025-2026",
+     "CC": "--",
+     "EX": "6.75",
+     "TP": "17.0",
+     "MoySO": "11.14",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "11.14",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API452",
+    "au": "2025-2026",
+    "cc": "13.5",
+    "ex": "6.5",
+    "tp": "--",
+    "moy_so": "8.6",
+    "rat": "15.0",
+    "moy_sr": "--",
+    "moy": "8.6",
+    "decision": "RAT",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API452",
+     "AU": "2025-2026",
+     "CC": "13.5",
+     "EX": "6.5",
+     "TP": "--",
+     "MoySO": "8.6",
+     "RAT": "15.0",
+     "MoySR": "--",
+     "Moy": "8.6",
+     "Dec": "RAT"
+    }
+   },
+   {
+    "code": "API461",
+    "au": "2025-2026",
+    "cc": "16.0",
+    "ex": "16.0",
+    "tp": "--",
+    "moy_so": "16.0",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "16.0",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API461",
+     "AU": "2025-2026",
+     "CC": "16.0",
+     "EX": "16.0",
+     "TP": "--",
+     "MoySO": "16.0",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "16.0",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API462",
+    "au": "2025-2026",
+    "cc": "18.5",
+    "ex": "19.02",
+    "tp": "--",
+    "moy_so": "18.86",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "18.86",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API462",
+     "AU": "2025-2026",
+     "CC": "18.5",
+     "EX": "19.02",
+     "TP": "--",
+     "MoySO": "18.86",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "18.86",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API471",
+    "au": "2025-2026",
+    "cc": "15.0",
+    "ex": "17.0",
+    "tp": "--",
+    "moy_so": "16.4",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "16.4",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API471",
+     "AU": "2025-2026",
+     "CC": "15.0",
+     "EX": "17.0",
+     "TP": "--",
+     "MoySO": "16.4",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "16.4",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API472",
+    "au": "2025-2026",
+    "cc": "17.0",
+    "ex": "17.0",
+    "tp": "--",
+    "moy_so": "17.0",
+    "rat": "--",
+    "moy_sr": "--",
+    "moy": "17.0",
+    "decision": "VORD",
+    "moy_sr_computed": "",
+    "decision_computed": "",
+    "raw": {
+     "CodeElem": "API472",
+     "AU": "2025-2026",
+     "CC": "17.0",
+     "EX": "17.0",
+     "TP": "--",
+     "MoySO": "17.0",
+     "RAT": "--",
+     "MoySR": "--",
+     "Moy": "17.0",
+     "Dec": "VORD"
+    }
+   }
+  ],
+  "module_grades": [
+   {
+    "code": "API31",
+    "au": "2025-2026",
+    "moy": "14.93",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API31",
+     "AU": "2025-2026",
+     "Moy": "14.93",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API32",
+    "au": "2025-2026",
+    "moy": "12.19",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API32",
+     "AU": "2025-2026",
+     "Moy": "12.19",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API33",
+    "au": "2025-2026",
+    "moy": "12.8",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API33",
+     "AU": "2025-2026",
+     "Moy": "12.8",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API34",
+    "au": "2025-2026",
+    "moy": "11.0",
+    "decision": "VRAT",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API34",
+     "AU": "2025-2026",
+     "Moy": "11.0",
+     "Dec": "VRAT"
+    }
+   },
+   {
+    "code": "API35",
+    "au": "2025-2026",
+    "moy": "9.76",
+    "decision": "NV",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API35",
+     "AU": "2025-2026",
+     "Moy": "9.76",
+     "Dec": "NV"
+    }
+   },
+   {
+    "code": "API36",
+    "au": "2025-2026",
+    "moy": "13.94",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API36",
+     "AU": "2025-2026",
+     "Moy": "13.94",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API37",
+    "au": "2025-2026",
+    "moy": "14.7",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API37",
+     "AU": "2025-2026",
+     "Moy": "14.7",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API41",
+    "au": "2025-2026",
+    "moy": "13.43",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API41",
+     "AU": "2025-2026",
+     "Moy": "13.43",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API42",
+    "au": "2025-2026",
+    "moy": "9.08",
+    "decision": "RAT",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API42",
+     "AU": "2025-2026",
+     "Moy": "9.08",
+     "Dec": "RAT"
+    }
+   },
+   {
+    "code": "API43",
+    "au": "2025-2026",
+    "moy": "11.33",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API43",
+     "AU": "2025-2026",
+     "Moy": "11.33",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API44",
+    "au": "2025-2026",
+    "moy": "12.94",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API44",
+     "AU": "2025-2026",
+     "Moy": "12.94",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API45",
+    "au": "2025-2026",
+    "moy": "10.22",
+    "decision": "RAT",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API45",
+     "AU": "2025-2026",
+     "Moy": "10.22",
+     "Dec": "RAT"
+    }
+   },
+   {
+    "code": "API46",
+    "au": "2025-2026",
+    "moy": "17.43",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API46",
+     "AU": "2025-2026",
+     "Moy": "17.43",
+     "Dec": "VORD"
+    }
+   },
+   {
+    "code": "API47",
+    "au": "2025-2026",
+    "moy": "16.7",
+    "decision": "VORD",
+    "moy_computed": "",
+    "decision_computed": "",
+    "coeff_assumed": false,
+    "raw": {
+     "CodeMod": "API47",
+     "AU": "2025-2026",
+     "Moy": "16.7",
+     "Dec": "VORD"
+    }
+   }
+  ],
+  "semester_results": [
+   {
+    "niveau": "1A",
+    "semestre": "S1",
+    "au": "2024-2025",
+    "moy_sem": "12.573",
+    "pj": "0.0",
+    "decision": "--",
+    "classement": "224 / 423",
+    "releve_url": "/student/documents/relevesem?niveau=1A&semestre=S1",
+    "raw": {
+     "Niveau": "1A",
+     "Filière": "API-MPT",
+     "Semestre": "S1",
+     "AU": "2024-2025",
+     "Statut": "NI",
+     "Moy SEM": "12.573",
+     "PJ": "0.0",
+     "Decesion": "--",
+     "Classement": "224 / 423",
+     "Relevé de Notes": ""
+    }
+   },
+   {
+    "niveau": "1A",
+    "semestre": "S2",
+    "au": "2024-2025",
+    "moy_sem": "14.795",
+    "pj": "0.0",
+    "decision": "--",
+    "classement": "51 / 419",
+    "releve_url": "/student/documents/relevesem?niveau=1A&semestre=S2",
+    "raw": {
+     "Niveau": "1A",
+     "Filière": "API-MPT",
+     "Semestre": "S2",
+     "AU": "2024-2025",
+     "Statut": "NI",
+     "Moy SEM": "14.795",
+     "PJ": "0.0",
+     "Decesion": "--",
+     "Classement": "51 / 419",
+     "Relevé de Notes": ""
+    }
+   },
+   {
+    "niveau": "2A",
+    "semestre": "S3",
+    "au": "2025-2026",
+    "moy_sem": "12.652",
+    "pj": "0.0",
+    "decision": "--",
+    "classement": "165 / 419",
+    "releve_url": "/student/documents/relevesem?niveau=2A&semestre=S3",
+    "raw": {
+     "Niveau": "2A",
+     "Filière": "API-MPT",
+     "Semestre": "S3",
+     "AU": "2025-2026",
+     "Statut": "NI",
+     "Moy SEM": "12.652",
+     "PJ": "0.0",
+     "Decesion": "--",
+     "Classement": "165 / 419",
+     "Relevé de Notes": ""
+    }
+   }
+  ],
+  "year_results": [
+   {
+    "niveau": "1A",
+    "filiere": "API-MPT",
+    "au": "2024-2025",
+    "statut": "NI",
+    "moy_annee": "13.684",
+    "pj": "0.0",
+    "decision": "V",
+    "classement": "98 / 419",
+    "releve_url": "/student/documents/releveannee?niveau=1A",
+    "raw": {
+     "Niveau": "1A",
+     "Filière": "API-MPT",
+     "AU": "2024-2025",
+     "Statut": "NI",
+     "Moy Année": "13.684",
+     "PJ": "0.0",
+     "Decesion": "V",
+     "Classement": "98 / 419",
+     "Relevé de Notes": ""
+    }
+   }
+  ],
+  "diploma": {
+   "empty": true,
+   "message": "Vous n'avez pas de note de diplome pour le moment !",
+   "rows": [],
+   "raw": {}
+  },
+  "absences": [
+   {
+    "element": "API472",
+    "date": "2026-05-11",
+    "seance": "Seance 3",
+    "justified": true,
+    "remarks": "",
+    "raw": {
+     "Element": "API472",
+     "Date": "2026-05-11 00:00:00",
+     "Seance": "Seance 3",
+     "Justif": "true",
+     "Remarques": ""
+    }
+   },
+   {
+    "element": "API452",
+    "date": "2026-05-11",
+    "seance": "Seance 2",
+    "justified": true,
+    "remarks": "",
+    "raw": {
+     "Element": "API452",
+     "Date": "2026-05-11 00:00:00",
+     "Seance": "Seance 2",
+     "Justif": "true",
+     "Remarques": ""
+    }
+   },
+   {
+    "element": "API411",
+    "date": "2026-03-27",
+    "seance": "Seance 3",
+    "justified": false,
+    "remarks": "",
+    "raw": {
+     "Element": "API411",
+     "Date": "2026-03-27 00:00:00",
+     "Seance": "Seance 3",
+     "Justif": "false",
+     "Remarques": ""
+    }
+   },
+   {
+    "element": "API442",
+    "date": "2026-03-27",
+    "seance": "Seance 1",
+    "justified": false,
+    "remarks": "",
+    "raw": {
+     "Element": "API442",
+     "Date": "2026-03-27 00:00:00",
+     "Seance": "Seance 1",
+     "Justif": "false",
+     "Remarques": ""
+    }
+   },
+   {
+    "element": "API471",
+    "date": "2026-03-16",
+    "seance": "Seance 3",
+    "justified": true,
+    "remarks": "",
+    "raw": {
+     "Element": "API471",
+     "Date": "2026-03-16 00:00:00",
+     "Seance": "Seance 3",
+     "Justif": "true",
+     "Remarques": ""
+    }
+   },
+   {
+    "element": "API452",
+    "date": "2026-03-16",
+    "seance": "Seance 2",
+    "justified": true,
+    "remarks": "",
+    "raw": {
+     "Element": "API452",
+     "Date": "2026-03-16 00:00:00",
+     "Seance": "Seance 2",
+     "Justif": "true",
+     "Remarques": ""
+    }
+   }
+  ],
+  "absence_summary": [
+   {
+    "CodeElem": "API311",
+    "Intitulé": "Analyse 3",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API321",
+    "Intitulé": "Chimie organique",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API322",
+    "Intitulé": "Métallurgie",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API331",
+    "Intitulé": "Mécanique du solide appliquée",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API332",
+    "Intitulé": "Usinage 2",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API341",
+    "Intitulé": "Automatique des systèmes",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API342",
+    "Intitulé": "RDM",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API351",
+    "Intitulé": "Programmation C++ et Algorithmique",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API352",
+    "Intitulé": "Calcul des Probabilités",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API361",
+    "Intitulé": "Initiation à la communication",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API362",
+    "Intitulé": "English for International communication",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API371",
+    "Intitulé": "Culture",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API411",
+    "Intitulé": "Analyse 4",
+    "Non Justifiée": "1",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API421",
+    "Intitulé": "Algèbre 2",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API431",
+    "Intitulé": "Eléments de machine",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API441",
+    "Intitulé": "Electromagnétisme",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API442",
+    "Intitulé": "Optique physique",
+    "Non Justifiée": "1",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API451",
+    "Intitulé": "Méthodes numériques",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API452",
+    "Intitulé": "Programmation Avancée",
+    "Non Justifiée": "0",
+    "Justifiée": "2"
+   },
+   {
+    "CodeElem": "API461",
+    "Intitulé": "Techniques d'écriture",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API462",
+    "Intitulé": "English for International Communication",
+    "Non Justifiée": "0",
+    "Justifiée": "0"
+   },
+   {
+    "CodeElem": "API471",
+    "Intitulé": "Développement personnel",
+    "Non Justifiée": "0",
+    "Justifiée": "1"
+   },
+   {
+    "CodeElem": "API472",
+    "Intitulé": "Savoir être",
+    "Non Justifiée": "0",
+    "Justifiée": "1"
+   }
+  ],
+  "sanctions": [
+   {
+    "key": "Absences non justifiées",
+    "value": "2",
+    "raw": {
+     "key": "Absences non justifiées",
+     "value": "2"
+    }
+   },
+   {
+    "key": "Absences justifiées",
+    "value": "4",
+    "raw": {
+     "key": "Absences justifiées",
+     "value": "4"
+    }
+   },
+   {
+    "key": "Sanction",
+    "value": "2",
+    "raw": {
+     "key": "Sanction",
+     "value": "2"
+    }
+   },
+   {
+    "key": "Message",
+    "value": "Avertissement",
+    "raw": {
+     "key": "Message",
+     "value": "Avertissement"
+    }
+   }
+  ],
+  "courses": [
+   {
+    "code_elem": "API311",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API311",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API321",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API321",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API322",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API322",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API331",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API331",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API332",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API332",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API341",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API341",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API342",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API342",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API351",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API351",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API352",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API352",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API361",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API361",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API362",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API362",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API371",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API371",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API411",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API411",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API421",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API421",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API431",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API431",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API441",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API441",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API442",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API442",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API451",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API451",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API452",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API452",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API461",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API461",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API462",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API462",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API471",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API471",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   },
+   {
+    "code_elem": "API472",
+    "statut": "NI",
+    "section": "Sec6",
+    "groupe": "",
+    "sous_groupe": "SG63",
+    "num": "404",
+    "raw": {
+     "CodeElem": "API472",
+     "Statut": "NI",
+     "Section": "Sec6",
+     "Groupe": "",
+     "S.Groupe": "SG63",
+     "Num": "404"
+    }
+   }
+  ],
+  "stats": [
+   {
+    "element": "API311",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "14.93",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API321",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "12.88",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API322",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "11.16",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API331",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "15.34",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API332",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "9.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API341",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "13.23",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API341",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "13.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API342",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "17.83",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API342",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "18.5",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API351",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "10.3",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API351",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "6.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API352",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "9.08",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API352",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "7.5",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API361",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "13.78",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API362",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "14.1",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API371",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "14.7",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API372",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "14.7",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API411",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "13.43",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API421",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "9.08",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API421",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "14.5",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API431",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "11.33",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API441",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "14.98",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API442",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "9.88",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API451",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "11.14",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API452",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "8.6",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API452",
+    "eval_kind": "NoteRAT",
+    "au": "2025-2026",
+    "note": "15.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API461",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "16.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API462",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "18.86",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API471",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "16.4",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   },
+   {
+    "element": "API472",
+    "eval_kind": "MoyElem",
+    "au": "2025-2026",
+    "note": "17.0",
+    "title": "Statistiques MoyElem - API311 - 2025-2026",
+    "rows": [
+     [
+      "Votre note",
+      "14.93"
+     ],
+     [
+      "Moyenne promo",
+      "12.49"
+     ],
+     [
+      "Max",
+      "19.35"
+     ],
+     [
+      "Min",
+      "0.0"
+     ],
+     [
+      "Ecart type",
+      "3.02"
+     ],
+     [
+      "Effectif",
+      "408"
+     ],
+     [
+      "Votre classement",
+      "75"
+     ]
+    ],
+    "raw": {
+     "title": "Statistiques MoyElem - API311 - 2025-2026"
+    }
+   }
+  ],
+  "documents": [
+   {
+    "kind": "attestation-scolarite",
+    "url": "/student/documents/attestation-scolarite",
+    "params": {},
+    "filename": "attestation-scolarite.pdf",
+    "content_type": "application/pdf"
+   },
+   {
+    "kind": "releve-annee",
+    "url": "/student/documents/releveannee?niveau=1A",
+    "params": {
+     "niveau": "1A"
+    },
+    "filename": "releve-1A-2024-2025.pdf",
+    "content_type": "application/pdf"
+   },
+   {
+    "kind": "releve-semestre",
+    "url": "/student/documents/relevesem?niveau=1A&semestre=S1",
+    "params": {
+     "niveau": "1A",
+     "semestre": "S1"
+    },
+    "filename": "releve-1A-S1-2024-2025.pdf",
+    "content_type": "application/pdf"
+   },
+   {
+    "kind": "releve-semestre",
+    "url": "/student/documents/relevesem?niveau=1A&semestre=S2",
+    "params": {
+     "niveau": "1A",
+     "semestre": "S2"
+    },
+    "filename": "releve-1A-S2-2024-2025.pdf",
+    "content_type": "application/pdf"
+   },
+   {
+    "kind": "releve-semestre",
+    "url": "/student/documents/relevesem?niveau=2A&semestre=S3",
+    "params": {
+     "niveau": "2A",
+     "semestre": "S3"
+    },
+    "filename": "releve-2A-S3-2025-2026.pdf",
+    "content_type": "application/pdf"
+   }
+  ],
+  "fetched_at": "2026-01-01T00:00:00+00:00",
+  "errors": {}
+ }
+}

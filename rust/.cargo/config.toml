@@ -1,0 +1,3 @@
+# ~/Projects is synced to the hp by Syncthing; build output stays out of it.
+[build]
+target-dir = "/home/notadil/.cache/cargo-target/schoolapp"

@@ -1,0 +1,216 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": [
+  {
+   "code": "API31",
+   "au": "2025-2026",
+   "moy": "14.93",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API31",
+    "AU": "2025-2026",
+    "Moy": "14.93",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API32",
+   "au": "2025-2026",
+   "moy": "12.19",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API32",
+    "AU": "2025-2026",
+    "Moy": "12.19",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API33",
+   "au": "2025-2026",
+   "moy": "12.8",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API33",
+    "AU": "2025-2026",
+    "Moy": "12.8",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API34",
+   "au": "2025-2026",
+   "moy": "11.0",
+   "decision": "VRAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API34",
+    "AU": "2025-2026",
+    "Moy": "11.0",
+    "Dec": "VRAT"
+   }
+  },
+  {
+   "code": "API35",
+   "au": "2025-2026",
+   "moy": "9.76",
+   "decision": "NV",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API35",
+    "AU": "2025-2026",
+    "Moy": "9.76",
+    "Dec": "NV"
+   }
+  },
+  {
+   "code": "API36",
+   "au": "2025-2026",
+   "moy": "13.94",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API36",
+    "AU": "2025-2026",
+    "Moy": "13.94",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API37",
+   "au": "2025-2026",
+   "moy": "14.7",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API37",
+    "AU": "2025-2026",
+    "Moy": "14.7",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API41",
+   "au": "2025-2026",
+   "moy": "13.43",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API41",
+    "AU": "2025-2026",
+    "Moy": "13.43",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API42",
+   "au": "2025-2026",
+   "moy": "9.08",
+   "decision": "RAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API42",
+    "AU": "2025-2026",
+    "Moy": "9.08",
+    "Dec": "RAT"
+   }
+  },
+  {
+   "code": "API43",
+   "au": "2025-2026",
+   "moy": "11.33",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API43",
+    "AU": "2025-2026",
+    "Moy": "11.33",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API44",
+   "au": "2025-2026",
+   "moy": "12.94",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API44",
+    "AU": "2025-2026",
+    "Moy": "12.94",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API45",
+   "au": "2025-2026",
+   "moy": "10.22",
+   "decision": "RAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API45",
+    "AU": "2025-2026",
+    "Moy": "10.22",
+    "Dec": "RAT"
+   }
+  },
+  {
+   "code": "API46",
+   "au": "2025-2026",
+   "moy": "17.43",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API46",
+    "AU": "2025-2026",
+    "Moy": "17.43",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API47",
+   "au": "2025-2026",
+   "moy": "16.7",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API47",
+    "AU": "2025-2026",
+    "Moy": "16.7",
+    "Dec": "VORD"
+   }
+  }
+ ]
+}

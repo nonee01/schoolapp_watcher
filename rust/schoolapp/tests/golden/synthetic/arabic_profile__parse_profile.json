@@ -1,0 +1,26 @@
+{
+ "code": "",
+ "cne_masar": "",
+ "nom": "Doe",
+ "prenom": "Jane",
+ "nom_ar": "دو",
+ "prenom_ar": "جين",
+ "cin": "",
+ "sexe": "",
+ "date_naissance": "",
+ "email": "",
+ "filiere": "Génie Électromécanique",
+ "niveau": "",
+ "statut": "",
+ "section": "",
+ "groupe": "",
+ "sous_groupe": "",
+ "photo_url": "",
+ "raw": {
+  "Nom": "Doe",
+  "Prénom": "Jane",
+  "Nom Arabe": "دو",
+  "Prénom Arabe": "جين",
+  "Filière": "Génie Électromécanique"
+ }
+}

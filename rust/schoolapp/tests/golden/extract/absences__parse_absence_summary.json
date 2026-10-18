@@ -1,0 +1,140 @@
+[
+ {
+  "CodeElem": "API311",
+  "Intitulé": "Analyse 3",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API321",
+  "Intitulé": "Chimie organique",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API322",
+  "Intitulé": "Métallurgie",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API331",
+  "Intitulé": "Mécanique du solide appliquée",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API332",
+  "Intitulé": "Usinage 2",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API341",
+  "Intitulé": "Automatique des systèmes",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API342",
+  "Intitulé": "RDM",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API351",
+  "Intitulé": "Programmation C++ et Algorithmique",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API352",
+  "Intitulé": "Calcul des Probabilités",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API361",
+  "Intitulé": "Initiation à la communication",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API362",
+  "Intitulé": "English for International communication",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API371",
+  "Intitulé": "Culture",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API411",
+  "Intitulé": "Analyse 4",
+  "Non Justifiée": "1",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API421",
+  "Intitulé": "Algèbre 2",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API431",
+  "Intitulé": "Eléments de machine",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API441",
+  "Intitulé": "Electromagnétisme",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API442",
+  "Intitulé": "Optique physique",
+  "Non Justifiée": "1",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API451",
+  "Intitulé": "Méthodes numériques",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API452",
+  "Intitulé": "Programmation Avancée",
+  "Non Justifiée": "0",
+  "Justifiée": "2"
+ },
+ {
+  "CodeElem": "API461",
+  "Intitulé": "Techniques d'écriture",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API462",
+  "Intitulé": "English for International Communication",
+  "Non Justifiée": "0",
+  "Justifiée": "0"
+ },
+ {
+  "CodeElem": "API471",
+  "Intitulé": "Développement personnel",
+  "Non Justifiée": "0",
+  "Justifiée": "1"
+ },
+ {
+  "CodeElem": "API472",
+  "Intitulé": "Savoir être",
+  "Non Justifiée": "0",
+  "Justifiée": "1"
+ }
+]

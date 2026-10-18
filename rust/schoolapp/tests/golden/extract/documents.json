@@ -1,0 +1,48 @@
+[
+ {
+  "kind": "attestation-scolarite",
+  "url": "/student/documents/attestation-scolarite",
+  "params": {},
+  "filename": "attestation-scolarite.pdf",
+  "content_type": "application/pdf"
+ },
+ {
+  "kind": "releve-annee",
+  "url": "/student/documents/releveannee?niveau=1A",
+  "params": {
+   "niveau": "1A"
+  },
+  "filename": "releve-1A-2024-2025.pdf",
+  "content_type": "application/pdf"
+ },
+ {
+  "kind": "releve-semestre",
+  "url": "/student/documents/relevesem?niveau=1A&semestre=S1",
+  "params": {
+   "niveau": "1A",
+   "semestre": "S1"
+  },
+  "filename": "releve-1A-S1-2024-2025.pdf",
+  "content_type": "application/pdf"
+ },
+ {
+  "kind": "releve-semestre",
+  "url": "/student/documents/relevesem?niveau=1A&semestre=S2",
+  "params": {
+   "niveau": "1A",
+   "semestre": "S2"
+  },
+  "filename": "releve-1A-S2-2024-2025.pdf",
+  "content_type": "application/pdf"
+ },
+ {
+  "kind": "releve-semestre",
+  "url": "/student/documents/relevesem?niveau=2A&semestre=S3",
+  "params": {
+   "niveau": "2A",
+   "semestre": "S3"
+  },
+  "filename": "releve-2A-S3-2025-2026.pdf",
+  "content_type": "application/pdf"
+ }
+]

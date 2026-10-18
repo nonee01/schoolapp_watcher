@@ -1,0 +1,226 @@
+[
+ {
+  "code": "API11",
+  "au": "2024-2025",
+  "moy": "11.0",
+  "decision": "VRAT",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API11",
+   "AU": "2024-2025",
+   "Moy": "11.0",
+   "PJ": "0.0",
+   "Decision": "VRAT"
+  }
+ },
+ {
+  "code": "API12",
+  "au": "2024-2025",
+  "moy": "11.81",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API12",
+   "AU": "2024-2025",
+   "Moy": "11.81",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API13",
+  "au": "2024-2025",
+  "moy": "11.53",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API13",
+   "AU": "2024-2025",
+   "Moy": "11.53",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API14",
+  "au": "2024-2025",
+  "moy": "12.41",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API14",
+   "AU": "2024-2025",
+   "Moy": "12.41",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API15",
+  "au": "2024-2025",
+  "moy": "11.0",
+  "decision": "VRAC",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API15",
+   "AU": "2024-2025",
+   "Moy": "11.0",
+   "PJ": "0.7",
+   "Decision": "VRAC"
+  }
+ },
+ {
+  "code": "API16",
+  "au": "2024-2025",
+  "moy": "16.13",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API16",
+   "AU": "2024-2025",
+   "Moy": "16.13",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API17",
+  "au": "2024-2025",
+  "moy": "17.02",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API17",
+   "AU": "2024-2025",
+   "Moy": "17.02",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API21",
+  "au": "2024-2025",
+  "moy": "11.0",
+  "decision": "VRAT",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API21",
+   "AU": "2024-2025",
+   "Moy": "11.0",
+   "PJ": "0.0",
+   "Decision": "VRAT"
+  }
+ },
+ {
+  "code": "API22",
+  "au": "2024-2025",
+  "moy": "15.23",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API22",
+   "AU": "2024-2025",
+   "Moy": "15.23",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API23",
+  "au": "2024-2025",
+  "moy": "15.41",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API23",
+   "AU": "2024-2025",
+   "Moy": "15.41",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API24",
+  "au": "2024-2025",
+  "moy": "15.05",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API24",
+   "AU": "2024-2025",
+   "Moy": "15.05",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API25",
+  "au": "2024-2025",
+  "moy": "13.31",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API25",
+   "AU": "2024-2025",
+   "Moy": "13.31",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API26",
+  "au": "2024-2025",
+  "moy": "18.0",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API26",
+   "AU": "2024-2025",
+   "Moy": "18.0",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ },
+ {
+  "code": "API27",
+  "au": "2024-2025",
+  "moy": "17.72",
+  "decision": "VORD",
+  "moy_computed": "",
+  "decision_computed": "",
+  "coeff_assumed": false,
+  "raw": {
+   "CodeMod": "API27",
+   "AU": "2024-2025",
+   "Moy": "17.72",
+   "PJ": "0.0",
+   "Decision": "VORD"
+  }
+ }
+]

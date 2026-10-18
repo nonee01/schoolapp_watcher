@@ -1,0 +1,24 @@
+[
+ {
+  "niveau": "1A",
+  "filiere": "API-MPT",
+  "au": "2024-2025",
+  "statut": "NI",
+  "moy_annee": "13.684",
+  "pj": "0.0",
+  "decision": "V",
+  "classement": "98 / 419",
+  "releve_url": "/student/documents/releveannee?niveau=1A",
+  "raw": {
+   "Niveau": "1A",
+   "Filière": "API-MPT",
+   "AU": "2024-2025",
+   "Statut": "NI",
+   "Moy Année": "13.684",
+   "PJ": "0.0",
+   "Decesion": "V",
+   "Classement": "98 / 419",
+   "Relevé de Notes": ""
+  }
+ }
+]

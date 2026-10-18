@@ -1,0 +1,440 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": [
+  {
+   "code": "API31",
+   "au": "2025-2026",
+   "moy": "14.93",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API31",
+    "AU": "2025-2026",
+    "Moy": "14.93",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API32",
+   "au": "2025-2026",
+   "moy": "12.19",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API32",
+    "AU": "2025-2026",
+    "Moy": "12.19",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API33",
+   "au": "2025-2026",
+   "moy": "12.8",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API33",
+    "AU": "2025-2026",
+    "Moy": "12.8",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API34",
+   "au": "2025-2026",
+   "moy": "11.0",
+   "decision": "VRAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API34",
+    "AU": "2025-2026",
+    "Moy": "11.0",
+    "Dec": "VRAT"
+   }
+  },
+  {
+   "code": "API35",
+   "au": "2025-2026",
+   "moy": "9.76",
+   "decision": "NV",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API35",
+    "AU": "2025-2026",
+    "Moy": "9.76",
+    "Dec": "NV"
+   }
+  },
+  {
+   "code": "API36",
+   "au": "2025-2026",
+   "moy": "13.94",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API36",
+    "AU": "2025-2026",
+    "Moy": "13.94",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API37",
+   "au": "2025-2026",
+   "moy": "14.7",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API37",
+    "AU": "2025-2026",
+    "Moy": "14.7",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API41",
+   "au": "2025-2026",
+   "moy": "13.43",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API41",
+    "AU": "2025-2026",
+    "Moy": "13.43",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API42",
+   "au": "2025-2026",
+   "moy": "9.08",
+   "decision": "RAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API42",
+    "AU": "2025-2026",
+    "Moy": "9.08",
+    "Dec": "RAT"
+   }
+  },
+  {
+   "code": "API43",
+   "au": "2025-2026",
+   "moy": "11.33",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API43",
+    "AU": "2025-2026",
+    "Moy": "11.33",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API44",
+   "au": "2025-2026",
+   "moy": "12.94",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API44",
+    "AU": "2025-2026",
+    "Moy": "12.94",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API45",
+   "au": "2025-2026",
+   "moy": "10.22",
+   "decision": "RAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API45",
+    "AU": "2025-2026",
+    "Moy": "10.22",
+    "Dec": "RAT"
+   }
+  },
+  {
+   "code": "API46",
+   "au": "2025-2026",
+   "moy": "17.43",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API46",
+    "AU": "2025-2026",
+    "Moy": "17.43",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API47",
+   "au": "2025-2026",
+   "moy": "16.7",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API47",
+    "AU": "2025-2026",
+    "Moy": "16.7",
+    "Dec": "VORD"
+   }
+  },
+  {
+   "code": "API11",
+   "au": "2024-2025",
+   "moy": "11.0",
+   "decision": "VRAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API11",
+    "AU": "2024-2025",
+    "Moy": "11.0",
+    "PJ": "0.0",
+    "Decision": "VRAT"
+   }
+  },
+  {
+   "code": "API12",
+   "au": "2024-2025",
+   "moy": "11.81",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API12",
+    "AU": "2024-2025",
+    "Moy": "11.81",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API13",
+   "au": "2024-2025",
+   "moy": "11.53",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API13",
+    "AU": "2024-2025",
+    "Moy": "11.53",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API14",
+   "au": "2024-2025",
+   "moy": "12.41",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API14",
+    "AU": "2024-2025",
+    "Moy": "12.41",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API15",
+   "au": "2024-2025",
+   "moy": "11.0",
+   "decision": "VRAC",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API15",
+    "AU": "2024-2025",
+    "Moy": "11.0",
+    "PJ": "0.7",
+    "Decision": "VRAC"
+   }
+  },
+  {
+   "code": "API16",
+   "au": "2024-2025",
+   "moy": "16.13",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API16",
+    "AU": "2024-2025",
+    "Moy": "16.13",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API17",
+   "au": "2024-2025",
+   "moy": "17.02",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API17",
+    "AU": "2024-2025",
+    "Moy": "17.02",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API21",
+   "au": "2024-2025",
+   "moy": "11.0",
+   "decision": "VRAT",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API21",
+    "AU": "2024-2025",
+    "Moy": "11.0",
+    "PJ": "0.0",
+    "Decision": "VRAT"
+   }
+  },
+  {
+   "code": "API22",
+   "au": "2024-2025",
+   "moy": "15.23",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API22",
+    "AU": "2024-2025",
+    "Moy": "15.23",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API23",
+   "au": "2024-2025",
+   "moy": "15.41",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API23",
+    "AU": "2024-2025",
+    "Moy": "15.41",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API24",
+   "au": "2024-2025",
+   "moy": "15.05",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API24",
+    "AU": "2024-2025",
+    "Moy": "15.05",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API25",
+   "au": "2024-2025",
+   "moy": "13.31",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API25",
+    "AU": "2024-2025",
+    "Moy": "13.31",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API26",
+   "au": "2024-2025",
+   "moy": "18.0",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API26",
+    "AU": "2024-2025",
+    "Moy": "18.0",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  },
+  {
+   "code": "API27",
+   "au": "2024-2025",
+   "moy": "17.72",
+   "decision": "VORD",
+   "moy_computed": "",
+   "decision_computed": "",
+   "coeff_assumed": false,
+   "raw": {
+    "CodeMod": "API27",
+    "AU": "2024-2025",
+    "Moy": "17.72",
+    "PJ": "0.0",
+    "Decision": "VORD"
+   }
+  }
+ ]
+}

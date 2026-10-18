@@ -1,0 +1,22 @@
+{
+ "fetched_at": "2026-01-01T00:00:00+00:00",
+ "source": "fetch_all",
+ "data": [
+  {
+   "kind": "attestation-scolarite",
+   "url": "/student/documents/attestation-scolarite",
+   "params": {},
+   "filename": "attestation-scolarite.pdf",
+   "content_type": "application/pdf"
+  },
+  {
+   "kind": "releve-annee",
+   "url": "/student/documents/releveannee?niveau=1A",
+   "params": {
+    "niveau": "1A"
+   },
+   "filename": "releve-1A-2024-2025.pdf",
+   "content_type": "application/pdf"
+  }
+ ]
+}

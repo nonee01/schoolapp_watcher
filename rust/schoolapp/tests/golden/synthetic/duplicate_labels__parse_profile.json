@@ -1,0 +1,25 @@
+{
+ "code": "",
+ "cne_masar": "",
+ "nom": "Doe",
+ "prenom": "",
+ "nom_ar": "",
+ "prenom_ar": "",
+ "cin": "",
+ "sexe": "",
+ "date_naissance": "",
+ "email": "a@b.c",
+ "filiere": "",
+ "niveau": "",
+ "statut": "",
+ "section": "",
+ "groupe": "",
+ "sous_groupe": "",
+ "photo_url": "/photos/E1.jpg",
+ "raw": {
+  "Nom": "Doe",
+  "Lieu_Naissance": "Meknès",
+  "Lieu_Naissance (2)": "مكناس",
+  "Email": "a@b.c"
+ }
+}
