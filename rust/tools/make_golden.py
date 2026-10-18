@@ -90,15 +90,9 @@ SYNTHETIC = {
         "</table></body></html>",
         [("parse_element_grades", parse_element_grades)],
     ),
-    "malformed_table": (
-        "<html><body><table>"
-        "<tr><th>CodeElem<th>AU<th>Moy"
-        "<tr><td>E201<td>2025/2026<td><b>12</b>.<i>5</i>"
-        "<tr><td>E202&nbsp;<td>  2025/2026 <td>\n 08,75 \n"
-        "</table></body></html>",
-        [("parse_element_grades", parse_element_grades),
-         ("extract_table", lambda html: dict(zip(("headers", "rows"), extract_table(html))))],
-    ),
+    # No malformed-table case: html.parser nests unclosed <th>/<td> and finds no
+    # rows at all, while html5ever closes them like a browser. The Rust side pins
+    # the browser behaviour in tests/extract_tables.rs instead.
     "duplicate_labels": (
         "<html><body><img src='/img/logo-ensam.png'><img src='/photos/E1.jpg'>"
         "<table><tr><th>Nom</th><td>Doe</td></tr>"

@@ -8,6 +8,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use crate::json::to_python_compact_json;
+use crate::models::Raw;
 
 pub type Table = (Vec<String>, Vec<Vec<String>>);
 
@@ -15,10 +16,33 @@ fn selector(css: &str) -> Selector {
     Selector::parse(css).expect("static selector")
 }
 
-static TABLE: LazyLock<Selector> = LazyLock::new(|| selector("table"));
-static TR: LazyLock<Selector> = LazyLock::new(|| selector("tr"));
-static TH: LazyLock<Selector> = LazyLock::new(|| selector("th"));
-static TD: LazyLock<Selector> = LazyLock::new(|| selector("td"));
+pub(crate) static TABLE: LazyLock<Selector> = LazyLock::new(|| selector("table"));
+pub(crate) static TR: LazyLock<Selector> = LazyLock::new(|| selector("tr"));
+pub(crate) static TH: LazyLock<Selector> = LazyLock::new(|| selector("th"));
+pub(crate) static TD: LazyLock<Selector> = LazyLock::new(|| selector("td"));
+
+/// `{h: row[i] if i < len(row) else "" for i, h in enumerate(headers)}`: a repeated
+/// header keeps its first position and takes the last value, like a Python dict.
+pub(crate) fn row_map(headers: &[String], row: &[String]) -> Raw {
+    headers
+        .iter()
+        .enumerate()
+        .map(|(i, h)| (h.clone(), row.get(i).cloned().unwrap_or_default()))
+        .collect()
+}
+
+/// `raw.get(key, "")`.
+pub(crate) fn field(raw: &Raw, key: &str) -> String {
+    raw.get(key).cloned().unwrap_or_default()
+}
+
+/// `raw.get("Dec") or raw.get("Decision", "")`: an empty `Dec` falls through too.
+pub(crate) fn first_nonempty(raw: &Raw, keys: &[&str]) -> String {
+    let (last, rest) = keys.split_last().expect("at least one key");
+    rest.iter()
+        .find_map(|k| raw.get(*k).filter(|v| !v.is_empty()).cloned())
+        .unwrap_or_else(|| field(raw, last))
+}
 
 /// `" ".join(text.split())`: trim and collapse every whitespace run, `&nbsp;` included.
 pub fn normalize_cell(text: &str) -> String {
