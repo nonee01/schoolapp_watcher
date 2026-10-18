@@ -10,7 +10,7 @@ except Exception:  # optional dependency
 
 from ..calculator import list_modules, run_calculator
 from ..utils import AppContext
-from ..watcher import check_once, watch_loop
+from ..watcher import check_once, scheduled_check, watch_loop
 from ..watcher import _snapshot_path, _load_snapshot, _render_consolidated_snapshot
 from ..utils import resolve_credentials
 
@@ -171,6 +171,7 @@ def make_semester_app(semester: str) -> typer.Typer:
         notify_email: bool = typer.Option(False, help="Send email on detected changes"),
         notify_telegram: bool = typer.Option(False, help="Send Telegram message on detected changes"),
         once: bool = typer.Option(False, help="Run one check and exit"),
+        scheduled: bool = typer.Option(False, help="Run one check for a systemd timer, keeping the failure alerts, back-off and night pace in a state file"),
     ) -> None:
         """Watch this semester's marks for changes."""
         app_ctx: AppContext = ctx.obj
@@ -192,6 +193,20 @@ def make_semester_app(semester: str) -> typer.Typer:
                 timeout=timeout,
                 semester=semester,
                 state_file=state_file,
+                notify_email=notify_email,
+                notify_telegram=notify_telegram,
+                config=app_ctx.config,
+            )
+            raise typer.Exit(code=code)
+
+        if scheduled:
+            code = scheduled_check(
+                email=resolved_email,
+                password=resolved_password,
+                timeout=timeout,
+                semester=semester,
+                state_file=state_file,
+                interval=interval,
                 notify_email=notify_email,
                 notify_telegram=notify_telegram,
                 config=app_ctx.config,

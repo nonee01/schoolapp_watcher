@@ -1391,59 +1391,94 @@ def _try_notify(config: dict | None, enabled: bool, subject: str, text: str, not
     return sent
 
 
+def _new_watch_state() -> dict:
+    return {"failures": 0, "first_failure": None, "alerted": False, "last_error": ""}
+
+
+def _watch_step(state: dict, *, check, config: dict | None, notify_email: bool, notify_telegram: bool,
+                interval: int, now: float) -> float:
+    """Run one check, update the failure state, send the failing/recovered
+    alerts, and return how many seconds to wait before the next check."""
+    try:
+        check()
+        if state["alerted"]:
+            _try_notify(config, notify_email, "✅ SchoolApp watcher recovered", "Grade checks are succeeding again.", notify_telegram=notify_telegram)
+        state.update(failures=0, first_failure=None, alerted=False)
+    except Exception as exc:
+        state["failures"] += 1
+        if state["first_failure"] is None:
+            state["first_failure"] = now
+        state["last_error"] = str(exc)
+        if isinstance(exc, requests.RequestException):
+            log("WARNING", f"Network error ({state['failures']} consecutive): {exc}")
+        else:
+            log("ERROR", f"Check failed ({state['failures']} consecutive): {exc}")
+
+    failures = state["failures"]
+    if failures and not state["alerted"] and now - state["first_failure"] >= ALERT_AFTER_SECONDS:
+        state["alerted"] = _try_notify(
+            config,
+            notify_email,
+            "⚠️ SchoolApp watcher is failing",
+            f"Grade checks have been failing for over an hour ({failures} attempts). Last error: {state['last_error']}",
+            notify_telegram=notify_telegram,
+        )
+
+    sleep_s = _scheduled_interval(interval)
+    if failures:
+        sleep_s = max(sleep_s, min(interval * 2 ** min(failures, 5), 1800.0))
+    return sleep_s
+
+
 def watch_loop(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, interval: int, notify_email: bool, config: dict | None, notify_telegram: bool = False) -> int:
     log("INFO", f"Watching {semester}: every {interval}s (every {SLOW_INTERVAL // 60} min between {SLOW_WINDOW[0]:02d}:00-{SLOW_WINDOW[1]:02d}:00)")
     session = requests.Session()
     session.headers.update({"User-Agent": "schoolapp-cli/0.2"})
+    state = _new_watch_state()
 
-    failures = 0
-    first_failure: float | None = None
-    alerted = False
-    last_error = ""
+    def check() -> None:
+        check_once(email=email, password=password, timeout=timeout, semester=semester, state_file=state_file,
+                   notify_email=notify_email, notify_telegram=notify_telegram, config=config, session=session)
 
     try:
         while True:
-            try:
-                check_once(
-                    email=email,
-                    password=password,
-                    timeout=timeout,
-                    semester=semester,
-                    state_file=state_file,
-                    notify_email=notify_email,
-                    notify_telegram=notify_telegram,
-                    config=config,
-                    session=session,
-                )
-                if alerted:
-                    _try_notify(config, notify_email, "✅ SchoolApp watcher recovered", "Grade checks are succeeding again.", notify_telegram=notify_telegram)
-                failures = 0
-                first_failure = None
-                alerted = False
-            except requests.RequestException as exc:
-                failures += 1
-                first_failure = first_failure or time.time()
-                last_error = str(exc)
-                log("WARNING", f"Network error ({failures} consecutive): {exc}")
-            except Exception as exc:
-                failures += 1
-                first_failure = first_failure or time.time()
-                last_error = str(exc)
-                log("ERROR", f"Check failed ({failures} consecutive): {exc}")
-
-            if failures and not alerted and first_failure and time.time() - first_failure >= ALERT_AFTER_SECONDS:
-                alerted = _try_notify(
-                    config,
-                    notify_email,
-                    "⚠️ SchoolApp watcher is failing",
-                    f"Grade checks have been failing for over an hour ({failures} attempts). Last error: {last_error}",
-                    notify_telegram=notify_telegram,
-                )
-
-            sleep_s = _scheduled_interval(interval)
-            if failures:
-                sleep_s = max(sleep_s, min(interval * 2 ** min(failures, 5), 1800.0))
-            time.sleep(sleep_s)
+            time.sleep(_watch_step(state, check=check, config=config, notify_email=notify_email,
+                                   notify_telegram=notify_telegram, interval=interval, now=time.time()))
     except KeyboardInterrupt:
         console.print(Panel.fit("Stopped watch mode"))
         return 0
+
+
+def _watch_state_paths(semester: str) -> tuple[Path, Path]:
+    base = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state"))) / "schoolapp"
+    base.mkdir(parents=True, exist_ok=True)
+    return base / f"{semester.lower()}_watch.json", base / f"{semester.lower()}_next_due"
+
+
+def scheduled_check(*, email: str, password: str, timeout: int, semester: str, state_file: str | None, interval: int,
+                    notify_email: bool, config: dict | None, notify_telegram: bool = False, now: float | None = None) -> int:
+    """One check per systemd timer tick, so nothing stays in memory between checks.
+
+    Keeps watch_loop's behaviour across runs: the failure state lives in
+    <semester>_watch.json, and <semester>_next_due holds the epoch second of the
+    next check (night pace, jitter and back-off included), which the timer's
+    ExecCondition reads to skip ticks without starting Python. Always returns 0:
+    failures are reported by the alerts, as in the loop.
+    """
+    now = time.time() if now is None else now
+    state_path, due_path = _watch_state_paths(semester)
+    state = _new_watch_state()
+    try:
+        state.update(json.loads(state_path.read_text()))
+    except (OSError, ValueError):
+        pass
+
+    def check() -> None:
+        check_once(email=email, password=password, timeout=timeout, semester=semester, state_file=state_file,
+                   notify_email=notify_email, notify_telegram=notify_telegram, config=config)
+
+    sleep_s = _watch_step(state, check=check, config=config, notify_email=notify_email,
+                          notify_telegram=notify_telegram, interval=interval, now=now)
+    state_path.write_text(json.dumps(state))
+    due_path.write_text(str(int(now + sleep_s)))
+    return 0
