@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+pub mod fake;
+
 use std::path::{Path, PathBuf};
 
 /// The fixed clock the golden files were generated with.
