@@ -66,6 +66,31 @@ fn http_errors_become_status_errors() {
     assert_eq!(h.get("/student/notessem", &[]).unwrap_err().to_string(), "status 503");
 }
 
+/// Like `requests`, the timeout bounds each wait, not the whole request: a page
+/// whose headers and body each take longer than half the timeout still loads.
+#[test]
+fn timeout_applies_per_read_not_to_the_whole_request() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut line = String::new();
+        while reader.read_line(&mut line).unwrap() > 2 {
+            line.clear();
+        }
+        let body = "<html>slow but fine</html>";
+        let (first, rest) = body.split_at(10);
+        std::thread::sleep(Duration::from_millis(1200));
+        write!(stream, "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{first}", body.len()).unwrap();
+        stream.flush().unwrap();
+        std::thread::sleep(Duration::from_millis(1200));
+        stream.write_all(rest.as_bytes()).unwrap();
+    });
+    let mut h = UreqHttp::new(&base, Duration::from_secs(2));
+    assert_eq!(h.get("/slow", &[]).unwrap(), "<html>slow but fine</html>");
+}
+
 #[test]
 fn query_values_are_url_encoded() {
     let base = serve(|request| html("200 OK", request));

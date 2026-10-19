@@ -16,9 +16,13 @@ pub struct UreqHttp {
 impl UreqHttp {
     pub fn new(base_url: &str, timeout: Duration) -> Self {
         // Redirects are followed by hand below, so a POST answered with a
-        // redirect continues with a GET, as `requests` does.
+        // redirect continues with a GET, as `requests` does. The timeout bounds
+        // the connect and each read or write, like `requests`' `timeout=`,
+        // not the whole exchange.
         let agent = ureq::AgentBuilder::new()
-            .timeout(timeout)
+            .timeout_connect(timeout)
+            .timeout_read(timeout)
+            .timeout_write(timeout)
             .user_agent(USER_AGENT)
             .redirects(0)
             .build();
