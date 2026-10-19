@@ -50,9 +50,20 @@ pub fn normalize_cell(text: &str) -> String {
 }
 
 /// BeautifulSoup's `get_text(" ", strip=True)` followed by `normalize_cell`.
+/// Like bs4, text inside `<script>`, `<style>` and `<template>` is left out.
 pub fn text_of(element: ElementRef) -> String {
+    let root = element.id();
     let joined = element
-        .text()
+        .descendants()
+        .filter_map(|node| {
+            let text = node.value().as_text()?;
+            let hidden = node.ancestors().take_while(|a| a.id() != root).any(|a| {
+                a.value()
+                    .as_element()
+                    .is_some_and(|e| matches!(e.name(), "script" | "style" | "template"))
+            });
+            (!hidden).then_some(&**text)
+        })
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()

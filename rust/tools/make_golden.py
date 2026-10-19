@@ -90,6 +90,14 @@ SYNTHETIC = {
         "</table></body></html>",
         [("parse_element_grades", parse_element_grades)],
     ),
+    "script_in_cell": (
+        "<html><body><table>"
+        "<tr><th>CodeElem</th><th>AU</th><th>Moy</th><th>Dec</th></tr>"
+        "<tr><td>E301<script>var x = 1;</script></td><td>2025/2026</td>"
+        "<td>14,00<style>.a { color: red }</style></td><td>V<template><b>t</b></template></td></tr>"
+        "</table></body></html>",
+        [("parse_element_grades", parse_element_grades)],
+    ),
     # No malformed-table case: html.parser nests unclosed <th>/<td> and finds no
     # rows at all, while html5ever closes them like a browser. The Rust side pins
     # the browser behaviour in tests/extract_tables.rs instead.

@@ -1,0 +1,22 @@
+[
+ {
+  "code": "E301",
+  "au": "2025/2026",
+  "cc": "",
+  "ex": "",
+  "tp": "",
+  "moy_so": "",
+  "rat": "",
+  "moy_sr": "",
+  "moy": "14,00",
+  "decision": "V",
+  "moy_sr_computed": "",
+  "decision_computed": "",
+  "raw": {
+   "CodeElem": "E301",
+   "AU": "2025/2026",
+   "Moy": "14,00",
+   "Dec": "V"
+  }
+ }
+]

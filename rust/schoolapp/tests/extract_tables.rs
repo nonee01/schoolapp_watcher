@@ -36,6 +36,11 @@ fn absences_summary_sanctions() {
 }
 
 #[test]
+fn script_style_and_template_text_stay_out_of_cells() {
+    check(&parse_element_grades(&golden("synthetic/script_in_cell.html")), "synthetic/script_in_cell__parse_element_grades.json");
+}
+
+#[test]
 fn ragged_rows() {
     check(&parse_element_grades(&golden("synthetic/ragged_rows.html")), "synthetic/ragged_rows__parse_element_grades.json");
 }
