@@ -31,6 +31,8 @@ pub struct FakeHttp {
     pub expire_after: Option<usize>,
     /// Keep serving the login form after the login POST (a wrong password).
     pub reject_login: bool,
+    /// Paths that answer with the login form even while logged in.
+    pub login_form_paths: Vec<String>,
     /// `"GET <path>"`, `"GET <path>?k=v&k=v"` or `"POST <path>"`, one per request.
     pub log: Vec<String>,
     // Public only so tests can build a FakeHttp with `..Default::default()`.
@@ -40,7 +42,7 @@ pub struct FakeHttp {
 
 impl FakeHttp {
     fn page(&self, path: &str) -> String {
-        if path == "/login" || !self.logged_in {
+        if path == "/login" || !self.logged_in || self.login_form_paths.iter().any(|p| p == path) {
             return LOGIN_FORM.to_string();
         }
         match PAGES.iter().find(|(p, _)| *p == path) {

@@ -47,6 +47,16 @@ fn session_expiry_triggers_one_relogin() {
 }
 
 #[test]
+fn a_page_still_on_the_login_form_after_relogin_fails() {
+    let fake = FakeHttp { login_form_paths: vec!["/student/notessem".into()], ..Default::default() };
+    let mut c = Client::new(fake, now);
+    c.login("e", "p").unwrap();
+    let err = c.get_page("/student/notessem").unwrap_err();
+    assert_eq!(err.to_string(), "Session expired and re-authentication failed");
+    assert_eq!(c.http_mut().log.iter().filter(|p| *p == "POST /login").count(), 2);
+}
+
+#[test]
 fn wrong_password_and_missing_credentials() {
     let mut c = Client::new(FakeHttp { reject_login: true, ..Default::default() }, now);
     assert_eq!(c.login("e", "bad").unwrap_err().to_string(), "Login failed: verify email/password");
