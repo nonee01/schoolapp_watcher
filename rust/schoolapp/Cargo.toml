@@ -17,7 +17,8 @@ hex = "0.4"
 indexmap = { version = "2", features = ["serde"] }
 scraper = "0.27.0"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# preserve_order: loaded store envelopes and built JSON keep Python's key order
+serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"
 ureq = { version = "2", features = ["cookies"] }
 

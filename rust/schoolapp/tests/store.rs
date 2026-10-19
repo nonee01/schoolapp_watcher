@@ -38,6 +38,15 @@ fn failed_page_tree_matches_python() {
 }
 
 #[test]
+fn a_loaded_resource_reserializes_byte_for_byte() {
+    let tmp = tempfile::tempdir().unwrap();
+    let profile = StudentProfile { nom: "Doe".into(), ..Default::default() };
+    let path = save_resource("student/profile", &profile, "x", Some(tmp.path()), NOW).unwrap();
+    let loaded = load_resource("student/profile", Some(tmp.path())).unwrap();
+    assert_eq!(schoolapp::json::to_store_json(&loaded), std::fs::read_to_string(path).unwrap());
+}
+
+#[test]
 fn load_resource_rejects_missing_and_corrupt_files() {
     let tmp = tempfile::tempdir().unwrap();
     assert!(load_resource("student/profile", Some(tmp.path())).is_none());

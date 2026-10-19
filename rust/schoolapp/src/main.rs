@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -75,6 +76,21 @@ fn counts(data: &StudentData) -> [(&'static str, usize); 10] {
     ]
 }
 
+fn diploma_state(data: &StudentData) -> Option<&'static str> {
+    data.diploma.as_ref().map(|d| if d.empty { "empty" } else { "ok" })
+}
+
+/// The `--json` summary, keys in the Python CLI's order.
+fn summary(data: &StudentData, saved_to: Option<&Path>) -> serde_json::Value {
+    serde_json::json!({
+        "profile": data.profile.is_some(),
+        "diploma": diploma_state(data),
+        "counts": counts(data).into_iter().collect::<indexmap::IndexMap<_, _>>(),
+        "errors": data.errors,
+        "saved_to": saved_to.map(|p| p.display().to_string()),
+    })
+}
+
 fn fetch_all(args: FetchAllArgs) -> ExitCode {
     let (Some(email), Some(password)) = (
         from_flag_or_env(args.email, "SCHOOLAPP_EMAIL"),
@@ -101,21 +117,14 @@ fn fetch_all(args: FetchAllArgs) -> ExitCode {
         Some(state_dir())
     };
 
-    let diploma = data.diploma.as_ref().map(|d| if d.empty { "empty" } else { "ok" });
     if args.json {
-        let summary = serde_json::json!({
-            "profile": data.profile.is_some(),
-            "diploma": diploma,
-            "counts": counts(&data).into_iter().collect::<indexmap::IndexMap<_, _>>(),
-            "errors": data.errors,
-            "saved_to": saved_to.as_ref().map(|p| p.display().to_string()),
-        });
-        println!("{}", serde_json::to_string_pretty(&summary).expect("summary serializes"));
+        let text = serde_json::to_string_pretty(&summary(&data, saved_to.as_deref())).expect("summary serializes");
+        println!("{text}");
         return ExitCode::SUCCESS;
     }
 
     println!("profile {}", if data.profile.is_some() { "ok" } else { "--" });
-    println!("diploma {}", diploma.unwrap_or("--"));
+    println!("diploma {}", diploma_state(&data).unwrap_or("--"));
     for (name, count) in counts(&data) {
         println!("{name} {count}");
     }
@@ -131,5 +140,26 @@ fn fetch_all(args: FetchAllArgs) -> ExitCode {
 fn main() -> ExitCode {
     match Cli::parse().command {
         Command::FetchAll(args) => fetch_all(args),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn json_summary_keeps_python_key_order() {
+        let mut data = StudentData::default();
+        data.errors.insert("semester_results".into(), "boom".into());
+        data.errors.insert("absences".into(), "boom".into());
+        let text = serde_json::to_string(&summary(&data, None)).unwrap();
+        let at = |key: &str| text.find(&format!("\"{key}\"")).unwrap_or_else(|| panic!("{key} missing in {text}"));
+        assert!(at("profile") < at("diploma") && at("diploma") < at("counts"), "{text}");
+        assert!(at("counts") < at("errors") && at("errors") < at("saved_to"), "{text}");
+        assert!(at("element_grades") < at("module_grades") && at("courses") < at("stats"), "{text}");
+        // errors stay in the order the fetch recorded them
+        let first = text.find(r#""semester_results":"boom""#).unwrap();
+        let second = text.find(r#""absences":"boom""#).unwrap();
+        assert!(first < second, "{text}");
     }
 }
